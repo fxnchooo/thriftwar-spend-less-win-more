@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Home, Trophy, Zap } from "lucide-react";
+import { Home, Trophy, Zap, Bell } from "lucide-react";
+import { useUnreadCount } from "@/hooks/useNotifications";
 
 type Tab = "home" | "leaderboard" | "consequences";
 
@@ -35,15 +36,9 @@ const BottomNav = ({ active, onTabChange }: BottomNavProps) => {
                 />
               )}
               <Icon
-                className={`h-6 w-6 transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
+                className={`h-6 w-6 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}
               />
-              <span
-                className={`text-xs font-medium transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
+              <span className={`text-xs font-medium transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                 {tab.label}
               </span>
             </button>
