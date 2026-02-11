@@ -3,33 +3,44 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { CATEGORIES, type ExpenseCategory, type Expense } from "@/types/expense";
+import { CATEGORIES } from "@/types/expense";
 import Penny from "@/components/Penny";
+import { useAddExpense } from "@/hooks/useExpenses";
+import { getCurrencySymbol } from "@/hooks/useCurrency";
+import { toast } from "sonner";
+import type { ExpenseCategory } from "@/types/expense";
 
 interface AddExpenseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (expense: Omit<Expense, "id" | "createdAt">) => void;
+  groupId: string;
+  userCurrency: string;
 }
 
-const AddExpenseModal = ({ open, onOpenChange, onAdd }: AddExpenseModalProps) => {
+const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency }: AddExpenseModalProps) => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>("food");
   const [guiltLevel, setGuiltLevel] = useState(30);
+  const addExpense = useAddExpense();
 
   const isHighGuilt = guiltLevel > 70;
+  const symbol = getCurrencySymbol(userCurrency);
 
   const handleSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) return;
-    onAdd({
-      amount: parseFloat(amount),
-      category,
-      guiltLevel,
-    });
-    setAmount("");
-    setCategory("food");
-    setGuiltLevel(30);
-    onOpenChange(false);
+    addExpense.mutate(
+      { group_id: groupId, amount: parseFloat(amount), currency: userCurrency, category, guilt_level: guiltLevel },
+      {
+        onSuccess: () => {
+          toast.success("Expense added! 💸");
+          setAmount("");
+          setCategory("food");
+          setGuiltLevel(30);
+          onOpenChange(false);
+        },
+        onError: (err) => toast.error(err.message),
+      }
+    );
   };
 
   const guiltLabel = guiltLevel < 30 ? "No guilt 😌" : guiltLevel < 70 ? "Some guilt 😅" : "Maximum guilt 😰";
@@ -42,11 +53,10 @@ const AddExpenseModal = ({ open, onOpenChange, onAdd }: AddExpenseModalProps) =>
         </DialogHeader>
 
         <div className="flex flex-col gap-6">
-          {/* Amount */}
           <div className="flex flex-col items-center gap-2">
             <label className="text-sm font-medium text-muted-foreground">How much?</label>
             <div className="flex items-center gap-1">
-              <span className="text-3xl font-bold text-foreground">$</span>
+              <span className="text-3xl font-bold text-foreground">{symbol}</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -57,9 +67,9 @@ const AddExpenseModal = ({ open, onOpenChange, onAdd }: AddExpenseModalProps) =>
                 autoFocus
               />
             </div>
+            <span className="text-xs text-muted-foreground">{userCurrency}</span>
           </div>
 
-          {/* Category */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-muted-foreground">Category</label>
             <div className="flex gap-2">
@@ -80,42 +90,28 @@ const AddExpenseModal = ({ open, onOpenChange, onAdd }: AddExpenseModalProps) =>
             </div>
           </div>
 
-          {/* Guilt Slider */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-muted-foreground">Guilt Level</label>
               <span className="text-sm">{guiltLabel}</span>
             </div>
-            <Slider
-              value={[guiltLevel]}
-              onValueChange={([v]) => setGuiltLevel(v)}
-              max={100}
-              step={1}
-              className="w-full"
-            />
+            <Slider value={[guiltLevel]} onValueChange={([v]) => setGuiltLevel(v)} max={100} step={1} className="w-full" />
           </div>
 
-          {/* Penny warning */}
           <AnimatePresence>
             {isHighGuilt && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex justify-center"
-              >
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex justify-center">
                 <Penny state="prompting" message="Do you really need this? 🤔" />
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Submit */}
           <Button
             onClick={handleSubmit}
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!amount || parseFloat(amount) <= 0 || addExpense.isPending}
             className="h-12 rounded-2xl bg-primary text-lg font-bold text-primary-foreground hover:bg-primary/90"
           >
-            Add Expense 💸
+            {addExpense.isPending ? "Adding..." : "Add Expense 💸"}
           </Button>
         </div>
       </DialogContent>

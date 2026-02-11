@@ -1,39 +1,42 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Settings, LogOut } from "lucide-react";
 import Penny from "@/components/Penny";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import { Badge } from "@/components/ui/badge";
-import type { Expense } from "@/types/expense";
 import { CATEGORIES } from "@/types/expense";
+import { useGroupExpenses } from "@/hooks/useExpenses";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useConvertAmount, getCurrencySymbol } from "@/hooks/useCurrency";
+import CurrencyPicker from "@/components/CurrencyPicker";
 
-const Dashboard = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+interface DashboardProps {
+  groupId: string | null;
+}
+
+const Dashboard = ({ groupId }: DashboardProps) => {
   const [showModal, setShowModal] = useState(false);
-  const [streak] = useState(5);
+  const [showCurrency, setShowCurrency] = useState(false);
+  const { user, signOut } = useAuth();
+  const { data: profile } = useProfile();
+  const { data: expenses } = useGroupExpenses(groupId ?? undefined);
+  const convert = useConvertAmount();
+  const currencySymbol = getCurrencySymbol(profile?.preferred_currency || "USD");
 
-  const dailyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const myExpenses = expenses?.filter((e) => e.user_id === user?.id) || [];
+  const today = new Date().toDateString();
+  const todayExpenses = myExpenses.filter((e) => new Date(e.created_at).toDateString() === today);
+  const dailyTotal = todayExpenses.reduce((sum, e) => sum + convert(Number(e.amount), e.currency), 0);
   const dailyBudget = 50;
   const isOverBudget = dailyTotal > dailyBudget;
-  const lastExpenseHigh = expenses.length > 0 && expenses[expenses.length - 1]?.amount > 20;
 
-  const pennyState = lastExpenseHigh || isOverBudget ? "sad" : "happy";
+  const pennyState = isOverBudget ? "sad" : dailyTotal === 0 ? "happy" : "happy";
   const pennyMessage = isOverBudget
     ? "You're over budget! 😭"
-    : lastExpenseHigh
-    ? "That was a big one... 💸"
     : dailyTotal === 0
     ? "Great start! Keep saving! 🎉"
     : "You're doing great! 💪";
-
-  const handleAddExpense = (data: Omit<Expense, "id" | "createdAt">) => {
-    const newExpense: Expense = {
-      ...data,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-    };
-    setExpenses((prev) => [...prev, newExpense]);
-  };
 
   const getCategoryEmoji = (cat: string) =>
     CATEGORIES.find((c) => c.value === cat)?.emoji ?? "💰";
@@ -41,17 +44,24 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-8">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-foreground">ThriftWar</h1>
-        <p className="text-sm text-muted-foreground">Spend less. Win more. 🐷</p>
+      <div className="flex w-full items-center justify-between">
+        <button onClick={() => setShowCurrency(true)} className="text-sm text-muted-foreground hover:text-foreground">
+          <Settings className="h-5 w-5" />
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-extrabold text-foreground">ThriftWar</h1>
+          <p className="text-sm text-muted-foreground">Spend less. Win more. 🐷</p>
+        </div>
+        <button onClick={signOut} className="text-sm text-muted-foreground hover:text-foreground">
+          <LogOut className="h-5 w-5" />
+        </button>
       </div>
 
-      {/* Streak */}
-      <Badge className="bg-primary/15 text-primary hover:bg-primary/20 gap-1 px-4 py-1.5 text-sm font-semibold border-none">
-        🔥 {streak} days under budget
+      {/* Streak placeholder */}
+      <Badge className="border-none bg-primary/15 text-primary hover:bg-primary/20 gap-1 px-4 py-1.5 text-sm font-semibold">
+        🔥 {profile?.display_name || "Player"}
       </Badge>
 
-      {/* Penny */}
       <Penny state={pennyState} message={pennyMessage} />
 
       {/* Daily Spend */}
@@ -59,24 +69,24 @@ const Dashboard = () => {
         <span className="text-sm font-medium text-muted-foreground">Today's Spending</span>
         <motion.span
           key={dailyTotal}
-          initial={{ scale: 1.3, color: "hsl(var(--danger))" }}
+          initial={{ scale: 1.3 }}
           animate={{ scale: 1, color: isOverBudget ? "hsl(var(--danger))" : "hsl(var(--foreground))" }}
           className="text-5xl font-black"
         >
-          ${dailyTotal.toFixed(2)}
+          {currencySymbol}{dailyTotal.toFixed(2)}
         </motion.span>
-        <span className="text-xs text-muted-foreground">Budget: ${dailyBudget}/day</span>
+        <span className="text-xs text-muted-foreground">Budget: {currencySymbol}{dailyBudget}/day</span>
       </div>
 
-      {/* Recent Expenses */}
+      {/* Recent */}
       <div className="w-full max-w-md">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Recent</h2>
         <AnimatePresence>
-          {expenses.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground/60 py-4">No expenses yet. Keep it that way! 🎯</p>
+          {!todayExpenses.length ? (
+            <p className="py-4 text-center text-sm text-muted-foreground/60">No expenses yet. Keep it that way! 🎯</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {[...expenses].reverse().map((expense) => (
+              {todayExpenses.map((expense) => (
                 <motion.div
                   key={expense.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -88,14 +98,16 @@ const Dashboard = () => {
                     <span className="text-2xl">{getCategoryEmoji(expense.category)}</span>
                     <div>
                       <p className="text-sm font-semibold capitalize text-card-foreground">
-                        {CATEGORIES.find((c) => c.value === expense.category)?.label}
+                        {CATEGORIES.find((c) => c.value === expense.category)?.label || expense.category}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {expense.createdAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(expense.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
                   </div>
-                  <span className="text-lg font-bold text-danger">-${expense.amount.toFixed(2)}</span>
+                  <span className="text-lg font-bold text-danger">
+                    -{currencySymbol}{convert(Number(expense.amount), expense.currency).toFixed(2)}
+                  </span>
                 </motion.div>
               ))}
             </div>
@@ -113,7 +125,16 @@ const Dashboard = () => {
         <Plus className="h-8 w-8" />
       </motion.button>
 
-      <AddExpenseModal open={showModal} onOpenChange={setShowModal} onAdd={handleAddExpense} />
+      {groupId && (
+        <AddExpenseModal
+          open={showModal}
+          onOpenChange={setShowModal}
+          groupId={groupId}
+          userCurrency={profile?.preferred_currency || "USD"}
+        />
+      )}
+
+      <CurrencyPicker open={showCurrency} onOpenChange={setShowCurrency} />
     </div>
   );
 };
