@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateGroup } from "@/hooks/useGroups";
-import Penny from "@/components/Penny";
+import Mascot from "@/components/Mascot";
 import { toast } from "sonner";
 
 const GroupSetup = () => {
@@ -20,7 +20,7 @@ const GroupSetup = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4">
-      <Penny state="happy" message="Create your first group! 🎉" />
+      <Mascot state="happy" message="Create your first group! 🎉" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
