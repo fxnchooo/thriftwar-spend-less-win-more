@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { PUNISHMENTS } from "@/types/expense";
-import Penny from "@/components/Penny";
+import Mascot from "@/components/Mascot";
 import { Button } from "@/components/ui/button";
 import type { Group } from "@/hooks/useGroups";
 
@@ -86,11 +86,11 @@ const Consequences = ({ group }: ConsequencesProps) => {
       {result && (
         <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4 rounded-3xl bg-card p-6 shadow-lg">
           <p className="text-center text-lg font-bold text-foreground">{result}</p>
-          <Penny state="happy" message="Justice is served! 😈" />
+          <Mascot state="happy" message="Justice is served! 😈" />
         </motion.div>
       )}
 
-      {!result && !spinning && <Penny state="happy" message="Who's the loser this week? 👀" />}
+      {!result && !spinning && <Mascot state="happy" message="Who's the loser this week? 👀" />}
     </div>
   );
 };

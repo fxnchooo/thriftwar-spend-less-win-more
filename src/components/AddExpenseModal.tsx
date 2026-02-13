@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { CATEGORIES } from "@/types/expense";
-import Penny from "@/components/Penny";
+import Mascot from "@/components/Mascot";
 import { useAddExpense } from "@/hooks/useExpenses";
 import { getCurrencySymbol } from "@/hooks/useCurrency";
 import { toast } from "sonner";
@@ -101,7 +101,7 @@ const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency }: AddExpen
           <AnimatePresence>
             {isHighGuilt && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex justify-center">
-                <Penny state="prompting" message="Do you really need this? 🤔" />
+                <Mascot state="prompting" message="Do you really need this? 🤔" />
               </motion.div>
             )}
           </AnimatePresence>

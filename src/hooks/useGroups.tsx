@@ -68,12 +68,7 @@ export const useCreateGroup = () => {
         .select()
         .single();
       if (error) throw error;
-      // Add self as admin
-      await supabase.from("group_members").insert({
-        group_id: data.id,
-        user_id: user!.id,
-        role: "admin",
-      });
+      // Admin membership is auto-created by the on_group_created trigger
       return data as Group;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my_groups"] }),

@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
+import { useProfile } from "@/hooks/useProfile";
 
-type PennyState = "happy" | "sad" | "prompting";
+type MascotState = "happy" | "sad" | "prompting";
 
-interface PennyProps {
-  state: PennyState;
+interface MascotProps {
+  state: MascotState;
   message?: string;
 }
 
@@ -36,7 +37,7 @@ const promptingAnimation = {
   },
 };
 
-const getAnimation = (state: PennyState) => {
+const getAnimation = (state: MascotState) => {
   switch (state) {
     case "happy": return happyAnimation;
     case "sad": return sadAnimation;
@@ -44,15 +45,10 @@ const getAnimation = (state: PennyState) => {
   }
 };
 
-const getFace = (state: PennyState) => {
-  switch (state) {
-    case "happy": return "🐷";
-    case "sad": return "😢🐷";
-    case "prompting": return "🤔🐷";
-  }
-};
+const Mascot = ({ state, message }: MascotProps) => {
+  const { data: profile } = useProfile();
+  const avatar = profile?.avatar_text || "🐷";
 
-const Penny = ({ state, message }: PennyProps) => {
   return (
     <div className="flex flex-col items-center gap-2">
       {message && (
@@ -69,10 +65,10 @@ const Penny = ({ state, message }: PennyProps) => {
         animate={getAnimation(state)}
         className="text-7xl select-none"
       >
-        {getFace(state)}
+        {avatar}
       </motion.div>
     </div>
   );
 };
 
-export default Penny;
+export default Mascot;

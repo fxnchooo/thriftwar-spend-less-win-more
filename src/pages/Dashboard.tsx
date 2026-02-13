@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Settings, LogOut } from "lucide-react";
-import Penny from "@/components/Penny";
+import Mascot from "@/components/Mascot";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES } from "@/types/expense";
@@ -62,7 +62,7 @@ const Dashboard = ({ groupId }: DashboardProps) => {
         🔥 {profile?.display_name || "Player"}
       </Badge>
 
-      <Penny state={pennyState} message={pennyMessage} />
+      <Mascot state={pennyState} message={pennyMessage} />
 
       {/* Daily Spend */}
       <div className="flex flex-col items-center gap-1">
