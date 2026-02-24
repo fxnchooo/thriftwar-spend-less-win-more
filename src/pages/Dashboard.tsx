@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Settings, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Mascot from "@/components/Mascot";
+import GroupSetup from "@/components/GroupSetup";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES } from "@/types/expense";
@@ -13,11 +15,13 @@ import CurrencyPicker from "@/components/CurrencyPicker";
 
 interface DashboardProps {
   groupId: string | null;
+  lobby?: boolean;
 }
 
-const Dashboard = ({ groupId }: DashboardProps) => {
+const Dashboard = ({ groupId, lobby }: DashboardProps) => {
   const [showModal, setShowModal] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
+  const [showGroupSetup, setShowGroupSetup] = useState(false);
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { data: expenses } = useGroupExpenses(groupId ?? undefined);
@@ -40,6 +44,35 @@ const Dashboard = ({ groupId }: DashboardProps) => {
 
   const getCategoryEmoji = (cat: string) =>
     CATEGORIES.find((c) => c.value === cat)?.emoji ?? "💰";
+
+  if (lobby) {
+    return (
+      <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-8">
+        <div className="flex w-full items-center justify-between">
+          <div />
+          <div className="text-center">
+            <h1 className="text-2xl font-extrabold text-foreground">ThriftWar</h1>
+            <p className="text-sm text-muted-foreground">Spend less. Win more. 🐷</p>
+          </div>
+          <button onClick={signOut} className="text-sm text-muted-foreground hover:text-foreground">
+            <LogOut className="h-5 w-5" />
+          </button>
+        </div>
+        <Mascot state="happy" message="Welcome aboard! 🎉" />
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-muted-foreground">You aren't in a group yet. Create one to start a war, or wait for an invite!</p>
+          {!showGroupSetup ? (
+            <Button onClick={() => setShowGroupSetup(true)} className="h-12 rounded-2xl px-8 text-lg font-bold">
+              Create Group 🚀
+            </Button>
+          ) : (
+            <GroupSetup />
+          )}
+        </div>
+        <CurrencyPicker open={showCurrency} onOpenChange={setShowCurrency} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-8">
