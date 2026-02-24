@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { Home, Trophy, Zap, Bell } from "lucide-react";
+import { Home, Trophy, Zap, Settings } from "lucide-react";
 import { useUnreadCount } from "@/hooks/useNotifications";
 
-type Tab = "home" | "leaderboard" | "consequences";
+type Tab = "home" | "leaderboard" | "consequences" | "settings";
 
 interface BottomNavProps {
   active: Tab;
@@ -13,6 +13,7 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "leaderboard", label: "Board", icon: Trophy },
   { id: "consequences", label: "Wheel", icon: Zap },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 const BottomNav = ({ active, onTabChange }: BottomNavProps) => {

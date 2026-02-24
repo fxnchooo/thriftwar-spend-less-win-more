@@ -8,6 +8,7 @@ export interface Group {
   created_by: string;
   daily_bet: string;
   weekly_bet: string;
+  daily_limit: number;
   created_at: string;
 }
 
@@ -79,12 +80,28 @@ export const useInviteMember = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ groupId, email }: { groupId: string; email: string }) => {
-      // Look up user by email via profiles (we need an RPC or edge fn for this)
-      // For now, search by display_name or use a simple approach
-      // We'll use the auth admin API workaround - just add by user_id
-      // This is a placeholder - in production you'd send an invite
-      throw new Error("Invite by email coming soon! Share your group code instead.");
+      const { data, error } = await supabase.rpc("add_member_by_email", {
+        target_email: email,
+        target_group_id: groupId,
+      });
+      if (error) throw error;
+      if (data && !(data as any).success) throw new Error((data as any).message);
+      return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["group_members"] }),
+  });
+};
+
+export const useUpdateGroupBudget = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ groupId, dailyLimit }: { groupId: string; dailyLimit: number }) => {
+      const { error } = await supabase
+        .from("groups")
+        .update({ daily_limit: dailyLimit } as any)
+        .eq("id", groupId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my_groups"] }),
   });
 };

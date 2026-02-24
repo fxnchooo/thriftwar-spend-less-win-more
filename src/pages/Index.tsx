@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
 import Leaderboard from "@/pages/Leaderboard";
 import Consequences from "@/pages/Consequences";
+import GroupSettings from "@/components/GroupSettings";
 import BottomNav, { type Tab } from "@/components/BottomNav";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import GroupSetup from "@/components/GroupSetup";
@@ -32,21 +33,17 @@ const Index = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  if (!groupsLoading && (!groups || groups.length === 0)) {
-    return (
-      <div className="mx-auto min-h-screen max-w-md bg-background">
-        <GroupSetup />
-      </div>
-    );
-  }
+  const hasNoGroups = !groupsLoading && (!groups || groups.length === 0);
 
   const activeGroup = groups?.find((g) => g.id === activeGroupId);
 
   const renderPage = () => {
+    if (hasNoGroups) return <Dashboard groupId={null} lobby />;
     switch (activeTab) {
       case "home": return <Dashboard groupId={activeGroupId} />;
       case "leaderboard": return <Leaderboard groupId={activeGroupId} />;
       case "consequences": return <Consequences group={activeGroup} />;
+      case "settings": return activeGroup ? <GroupSettings group={activeGroup} /> : null;
     }
   };
 

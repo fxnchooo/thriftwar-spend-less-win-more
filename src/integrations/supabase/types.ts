@@ -133,6 +133,7 @@ export type Database = {
           created_at: string
           created_by: string
           daily_bet: string
+          daily_limit: number | null
           id: string
           name: string
           weekly_bet: string
@@ -141,6 +142,7 @@ export type Database = {
           created_at?: string
           created_by: string
           daily_bet?: string
+          daily_limit?: number | null
           id?: string
           name: string
           weekly_bet?: string
@@ -149,6 +151,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           daily_bet?: string
+          daily_limit?: number | null
           id?: string
           name?: string
           weekly_bet?: string
@@ -247,6 +250,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_member_by_email: {
+        Args: { target_email: string; target_group_id: string }
+        Returns: Json
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
