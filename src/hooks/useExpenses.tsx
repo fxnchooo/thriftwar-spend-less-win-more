@@ -49,10 +49,20 @@ export const useAddExpense = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (expense: { group_id: string; amount: number; currency: string; category: string; guilt_level: number; note?: string }) => {
+    mutationFn: async (expense: {
+      group_id: string;
+      amount: number;
+      currency: string;
+      category: string;
+      guilt_level: number;
+      note?: string;
+      status?: string;
+      target_user_id?: string;
+    }) => {
+      const { target_user_id, ...rest } = expense;
       const { error } = await supabase.from("expenses").insert({
-        ...expense,
-        user_id: user!.id,
+        ...rest,
+        user_id: target_user_id ?? user!.id,
       });
       if (error) throw error;
     },

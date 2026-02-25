@@ -48,6 +48,7 @@ export type Database = {
           guilt_level: number
           id: string
           note: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           guilt_level?: number
           id?: string
           note?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           guilt_level?: number
           id?: string
           note?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
