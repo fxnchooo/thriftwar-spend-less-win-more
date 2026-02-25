@@ -105,3 +105,35 @@ export const useUpdateGroupBudget = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my_groups"] }),
   });
 };
+
+export const useMyMembership = (groupId: string | undefined) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my_membership", groupId, user?.id],
+    enabled: !!groupId && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("group_members")
+        .select("*")
+        .eq("group_id", groupId!)
+        .eq("user_id", user!.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useUpdatePersonalLimit = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ membershipId, personalLimit }: { membershipId: string; personalLimit: number }) => {
+      const { error } = await supabase
+        .from("group_members")
+        .update({ personal_limit: personalLimit })
+        .eq("id", membershipId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my_membership"] }),
+  });
+};

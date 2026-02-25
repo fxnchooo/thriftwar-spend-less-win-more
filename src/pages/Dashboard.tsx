@@ -11,6 +11,7 @@ import { useGroupExpenses } from "@/hooks/useExpenses";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useConvertAmount, getCurrencySymbol } from "@/hooks/useCurrency";
+import { useMyMembership } from "@/hooks/useGroups";
 import CurrencyPicker from "@/components/CurrencyPicker";
 
 interface DashboardProps {
@@ -25,6 +26,7 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { data: expenses } = useGroupExpenses(groupId ?? undefined);
+  const { data: membership } = useMyMembership(groupId ?? undefined);
   const convert = useConvertAmount();
   const currencySymbol = getCurrencySymbol(profile?.preferred_currency || "USD");
 
@@ -32,7 +34,7 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
   const today = new Date().toDateString();
   const todayExpenses = myExpenses.filter((e) => new Date(e.created_at).toDateString() === today);
   const dailyTotal = todayExpenses.reduce((sum, e) => sum + convert(Number(e.amount), e.currency), 0);
-  const dailyBudget = 50;
+  const dailyBudget = membership?.personal_limit != null ? Number(membership.personal_limit) : 50;
   const isOverBudget = dailyTotal > dailyBudget;
 
   const pennyState = isOverBudget ? "sad" : dailyTotal === 0 ? "happy" : "happy";

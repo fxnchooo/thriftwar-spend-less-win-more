@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useUpdateGroupBudget, useInviteMember } from "@/hooks/useGroups";
+import { useUpdateGroupBudget, useInviteMember, useMyMembership, useUpdatePersonalLimit } from "@/hooks/useGroups";
 import type { Group } from "@/hooks/useGroups";
 import { toast } from "sonner";
 
@@ -15,6 +15,15 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
   const [email, setEmail] = useState("");
   const updateBudget = useUpdateGroupBudget();
   const inviteMember = useInviteMember();
+  const { data: membership } = useMyMembership(group.id);
+  const updatePersonalLimit = useUpdatePersonalLimit();
+  const [personalLimit, setPersonalLimit] = useState<number>(50);
+
+  useEffect(() => {
+    if (membership?.personal_limit != null) {
+      setPersonalLimit(Number(membership.personal_limit));
+    }
+  }, [membership]);
 
   const handleBudgetSave = () => {
     updateBudget.mutate(
@@ -67,6 +76,29 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
             {updateBudget.isPending ? "Saving..." : "Save"}
           </Button>
         </div>
+      </div>
+
+      {/* Personal Daily Limit */}
+      <div className="flex flex-col gap-2 rounded-2xl bg-card p-4 shadow-sm">
+        <label className="text-sm font-semibold text-muted-foreground">My Personal Daily Limit</label>
+        <Input
+          type="number"
+          value={personalLimit}
+          onChange={(e) => setPersonalLimit(Number(e.target.value))}
+          onBlur={() => {
+            if (!membership) return;
+            updatePersonalLimit.mutate(
+              { membershipId: membership.id, personalLimit },
+              {
+                onSuccess: () => toast.success("Personal limit saved! 🎯"),
+                onError: (err) => toast.error(err.message),
+              }
+            );
+          }}
+          className="h-12 rounded-2xl"
+          min={1}
+        />
+        <p className="text-xs text-muted-foreground">This is your own daily spending cap.</p>
       </div>
 
       {/* Invite */}
