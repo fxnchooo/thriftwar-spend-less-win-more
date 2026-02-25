@@ -94,6 +94,7 @@ export type Database = {
           created_at: string
           group_id: string
           id: string
+          personal_limit: number | null
           role: string
           user_id: string
         }
@@ -101,6 +102,7 @@ export type Database = {
           created_at?: string
           group_id: string
           id?: string
+          personal_limit?: number | null
           role?: string
           user_id: string
         }
@@ -108,6 +110,7 @@ export type Database = {
           created_at?: string
           group_id?: string
           id?: string
+          personal_limit?: number | null
           role?: string
           user_id?: string
         }
