@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Home, Trophy, Zap, Settings } from "lucide-react";
-import { useUnreadCount } from "@/hooks/useNotifications";
 
 type Tab = "home" | "leaderboard" | "consequences" | "settings";
 
@@ -18,7 +17,7 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
 
 const BottomNav = ({ active, onTabChange }: BottomNavProps) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-md items-center justify-around py-2">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
@@ -27,7 +26,7 @@ const BottomNav = ({ active, onTabChange }: BottomNavProps) => {
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="relative flex flex-col items-center gap-0.5 px-4 py-1"
+              className="relative flex flex-col items-center gap-0.5 px-4 py-1 transition-transform active:scale-90"
             >
               {isActive && (
                 <motion.div

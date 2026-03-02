@@ -1,4 +1,4 @@
-export type ExpenseCategory = "food" | "transport" | "useless";
+export type ExpenseCategory = "food" | "transport" | "shopping" | "entertainment" | "health" | "useless";
 
 export interface Expense {
   id: string;
@@ -26,7 +26,10 @@ export interface Punishment {
 export const CATEGORIES: { value: ExpenseCategory; label: string; emoji: string }[] = [
   { value: "food", label: "Food", emoji: "🍔" },
   { value: "transport", label: "Transport", emoji: "🚗" },
-  { value: "useless", label: "Useless Stuff", emoji: "🎭" },
+  { value: "shopping", label: "Shopping", emoji: "🛍️" },
+  { value: "entertainment", label: "Fun", emoji: "🎬" },
+  { value: "health", label: "Health", emoji: "💊" },
+  { value: "useless", label: "Useless", emoji: "🎭" },
 ];
 
 export const MOCK_LEADERBOARD: LeaderboardUser[] = [

@@ -129,18 +129,18 @@ const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency }: AddExpen
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-muted-foreground">Category</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.value}
                   onClick={() => setCategory(cat.value)}
-                  className={`flex flex-1 flex-col items-center gap-1 rounded-2xl px-3 py-3 text-sm font-medium transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-3 text-sm font-medium transition-all ${
                     category === cat.value
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                   }`}
                 >
-                  <span className="text-2xl">{cat.emoji}</span>
+                  <span className="text-xl">{cat.emoji}</span>
                   <span className="text-xs">{cat.label}</span>
                 </button>
               ))}
