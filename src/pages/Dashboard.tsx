@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Mascot from "@/components/Mascot";
 import GroupSetup from "@/components/GroupSetup";
 import AddExpenseModal from "@/components/AddExpenseModal";
+import BudgetRing from "@/components/BudgetRing";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES } from "@/types/expense";
 import { useGroupExpenses } from "@/hooks/useExpenses";
@@ -49,14 +50,14 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
 
   if (lobby) {
     return (
-      <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-8">
+      <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-14">
         <div className="flex w-full items-center justify-between">
           <div />
           <div className="text-center">
             <h1 className="text-2xl font-extrabold text-foreground">ThriftWar</h1>
             <p className="text-sm text-muted-foreground">Spend less. Win more. 🐷</p>
           </div>
-          <button onClick={signOut} className="text-sm text-muted-foreground hover:text-foreground">
+          <button onClick={signOut} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
             <LogOut className="h-5 w-5" />
           </button>
         </div>
@@ -68,7 +69,13 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
               Create Group 🚀
             </Button>
           ) : (
-            <GroupSetup />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-full max-w-sm"
+            >
+              <GroupSetup />
+            </motion.div>
           )}
         </div>
         <CurrencyPicker open={showCurrency} onOpenChange={setShowCurrency} />
@@ -77,17 +84,17 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-8">
+    <div className="flex flex-col items-center gap-5 px-4 pb-24 pt-14">
       {/* Header */}
       <div className="flex w-full items-center justify-between">
-        <button onClick={() => setShowCurrency(true)} className="text-sm text-muted-foreground hover:text-foreground">
+        <button onClick={() => setShowCurrency(true)} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
           <Settings className="h-5 w-5" />
         </button>
         <div className="text-center">
           <h1 className="text-2xl font-extrabold text-foreground">ThriftWar</h1>
           <p className="text-sm text-muted-foreground">Spend less. Win more. 🐷</p>
         </div>
-        <button onClick={signOut} className="text-sm text-muted-foreground hover:text-foreground">
+        <button onClick={signOut} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
           <LogOut className="h-5 w-5" />
         </button>
       </div>
@@ -99,38 +106,34 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
 
       <Mascot state={pennyState} message={pennyMessage} />
 
-      {/* Daily Spend */}
-      <div className="flex flex-col items-center gap-1">
-        <span className="text-sm font-medium text-muted-foreground">Today's Spending</span>
-        <motion.span
-          key={dailyTotal}
-          initial={{ scale: 1.3 }}
-          animate={{ scale: 1, color: isOverBudget ? "hsl(var(--danger))" : "hsl(var(--foreground))" }}
-          className="text-5xl font-black"
-        >
-          {currencySymbol}{dailyTotal.toFixed(2)}
-        </motion.span>
-        <span className="text-xs text-muted-foreground">Budget: {currencySymbol}{dailyBudget}/day</span>
-      </div>
+      {/* Budget Ring */}
+      <BudgetRing spent={dailyTotal} budget={dailyBudget} currencySymbol={currencySymbol} />
 
       {/* Recent */}
       <div className="w-full max-w-md">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Recent</h2>
         <AnimatePresence>
           {!todayExpenses.length ? (
-            <p className="py-4 text-center text-sm text-muted-foreground/60">No expenses yet. Keep it that way! 🎯</p>
+            <div className="flex flex-col items-center gap-2 rounded-2xl bg-card p-6 shadow-sm">
+              <span className="text-3xl">🎯</span>
+              <p className="text-sm font-medium text-muted-foreground">No expenses yet today!</p>
+              <p className="text-xs text-muted-foreground/60">Keep it that way to win 👑</p>
+            </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {todayExpenses.map((expense) => (
+              {todayExpenses.map((expense, i) => (
                 <motion.div
                   key={expense.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
+                  transition={{ delay: i * 0.05 }}
                   className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{getCategoryEmoji(expense.category)}</span>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-xl">
+                      {getCategoryEmoji(expense.category)}
+                    </span>
                     <div>
                       <p className="text-sm font-semibold capitalize text-card-foreground">
                         {CATEGORIES.find((c) => c.value === expense.category)?.label || expense.category}
