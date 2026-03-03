@@ -1,35 +1,108 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useUpdateGroupBudget, useInviteMember, useMyMembership, useUpdatePersonalLimit } from "@/hooks/useGroups";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import {
+  useUpdateGroupBudget,
+  useInviteMember,
+  useMyMembership,
+  useUpdatePersonalLimit,
+  useGroupMembers,
+} from "@/hooks/useGroups";
 import type { Group } from "@/hooks/useGroups";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
+import { getCurrencySymbol, CURRENCIES } from "@/hooks/useCurrency";
 import { toast } from "sonner";
+import {
+  Users,
+  Crown,
+  Mail,
+  Target,
+  Wallet,
+  UserCircle,
+  Palette,
+  DollarSign,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
 
 interface GroupSettingsProps {
   group: Group;
 }
 
+const AVATARS = ["🐷", "🐱", "🐶", "🦊", "🐼", "🐨", "🐸", "🦄", "🐙", "🦋", "🐝", "🎯"];
+
 const GroupSettings = ({ group }: GroupSettingsProps) => {
-  const [budget, setBudget] = useState<number>(group.daily_limit ?? 50);
-  const [email, setEmail] = useState("");
+  const { user, signOut } = useAuth();
+  const { data: profile } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const { data: members } = useGroupMembers(group.id);
+  const { data: membership } = useMyMembership(group.id);
   const updateBudget = useUpdateGroupBudget();
   const inviteMember = useInviteMember();
-  const { data: membership } = useMyMembership(group.id);
   const updatePersonalLimit = useUpdatePersonalLimit();
+
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [personalLimit, setPersonalLimit] = useState<number>(50);
+  const [groupBudget, setGroupBudget] = useState<number>(group.daily_limit ?? 50);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+
+  const isAdmin = membership?.role === "admin";
+  const currencySymbol = getCurrencySymbol(profile?.preferred_currency || "USD");
 
   useEffect(() => {
-    if (membership?.personal_limit != null) {
-      setPersonalLimit(Number(membership.personal_limit));
-    }
+    if (profile?.display_name) setDisplayName(profile.display_name);
+  }, [profile]);
+
+  useEffect(() => {
+    if (membership?.personal_limit != null) setPersonalLimit(Number(membership.personal_limit));
   }, [membership]);
 
-  const handleBudgetSave = () => {
-    updateBudget.mutate(
-      { groupId: group.id, dailyLimit: budget },
+  const handleSaveName = () => {
+    if (!displayName.trim()) return;
+    updateProfile.mutate(
+      { display_name: displayName.trim() },
+      { onSuccess: () => toast.success("Name updated! ✨") }
+    );
+  };
+
+  const handleAvatarSelect = (avatar: string) => {
+    updateProfile.mutate(
+      { avatar_text: avatar },
+      { onSuccess: () => toast.success("Avatar updated!") }
+    );
+    setShowAvatarPicker(false);
+  };
+
+  const handleCurrencySelect = (code: string) => {
+    updateProfile.mutate(
+      { preferred_currency: code },
+      { onSuccess: () => toast.success(`Currency → ${code} ${getCurrencySymbol(code)}`) }
+    );
+    setShowCurrencyPicker(false);
+  };
+
+  const handleSavePersonalLimit = () => {
+    if (!membership) return;
+    updatePersonalLimit.mutate(
+      { membershipId: membership.id, personalLimit },
       {
-        onSuccess: () => toast.success("Budget updated! 💰"),
+        onSuccess: () => toast.success("Personal limit saved! 🎯"),
+        onError: (err) => toast.error(err.message),
+      }
+    );
+  };
+
+  const handleSaveGroupBudget = () => {
+    updateBudget.mutate(
+      { groupId: group.id, dailyLimit: groupBudget },
+      {
+        onSuccess: () => toast.success("Group budget updated! 💰"),
         onError: (err) => toast.error(err.message),
       }
     );
@@ -53,74 +126,255 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 px-4 pb-24 pt-8"
+      className="flex flex-col gap-4 px-4 pb-28 pt-6"
     >
-      <h1 className="text-2xl font-extrabold text-foreground">Group Settings ⚙️</h1>
-
-      {/* Budget */}
-      <div className="flex flex-col gap-2 rounded-2xl bg-card p-4 shadow-sm">
-        <label className="text-sm font-semibold text-muted-foreground">Daily Budget Limit</label>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
-            className="h-12 rounded-2xl"
-            min={1}
-          />
-          <Button
-            onClick={handleBudgetSave}
-            disabled={updateBudget.isPending}
-            className="h-12 rounded-2xl px-6 font-bold"
-          >
-            {updateBudget.isPending ? "Saving..." : "Save"}
-          </Button>
+      {/* Profile Section */}
+      <section className="rounded-2xl bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+          <UserCircle className="h-4 w-4" />
+          My Profile
         </div>
-      </div>
 
-      {/* Personal Daily Limit */}
-      <div className="flex flex-col gap-2 rounded-2xl bg-card p-4 shadow-sm">
-        <label className="text-sm font-semibold text-muted-foreground">My Personal Daily Limit</label>
-        <Input
-          type="number"
-          value={personalLimit}
-          onChange={(e) => setPersonalLimit(Number(e.target.value))}
-          onBlur={() => {
-            if (!membership) return;
-            updatePersonalLimit.mutate(
-              { membershipId: membership.id, personalLimit },
-              {
-                onSuccess: () => toast.success("Personal limit saved! 🎯"),
-                onError: (err) => toast.error(err.message),
-              }
-            );
-          }}
-          className="h-12 rounded-2xl"
-          min={1}
-        />
-        <p className="text-xs text-muted-foreground">This is your own daily spending cap.</p>
-      </div>
-
-      {/* Invite */}
-      <div className="flex flex-col gap-2 rounded-2xl bg-card p-4 shadow-sm">
-        <label className="text-sm font-semibold text-muted-foreground">Add Member by Email</label>
-        <div className="flex gap-2">
-          <Input
-            type="email"
-            placeholder="friend@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-2xl"
-          />
-          <Button
-            onClick={handleInvite}
-            disabled={inviteMember.isPending || !email.trim()}
-            className="h-12 rounded-2xl px-6 font-bold"
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+            className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-3xl transition-transform hover:scale-105 active:scale-95"
           >
-            {inviteMember.isPending ? "Adding..." : "Invite"}
-          </Button>
+            {profile?.avatar_text || "🐷"}
+            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              ✏️
+            </span>
+          </button>
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              onBlur={handleSaveName}
+              placeholder="Your name"
+              className="h-10 rounded-xl border-none bg-secondary text-sm font-semibold"
+            />
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+          </div>
         </div>
-      </div>
+
+        <AnimatePresence>
+          {showAvatarPicker && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 overflow-hidden"
+            >
+              <div className="grid grid-cols-6 gap-2 rounded-xl bg-secondary p-3">
+                {AVATARS.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => handleAvatarSelect(a)}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl transition-all hover:scale-110 ${
+                      profile?.avatar_text === a ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-card"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Currency selector */}
+        <button
+          onClick={() => setShowCurrencyPicker(!showCurrencyPicker)}
+          className="mt-3 flex w-full items-center justify-between rounded-xl bg-secondary px-4 py-3 text-sm transition-colors hover:bg-secondary/80"
+        >
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-foreground">Currency</span>
+          </div>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {currencySymbol} {profile?.preferred_currency || "USD"}
+            </span>
+            <ChevronRight className={`h-4 w-4 transition-transform ${showCurrencyPicker ? "rotate-90" : ""}`} />
+          </div>
+        </button>
+
+        <AnimatePresence>
+          {showCurrencyPicker && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-2 overflow-hidden"
+            >
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-secondary p-3 max-h-48 overflow-y-auto">
+                {CURRENCIES.map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={() => handleCurrencySelect(c.code)}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                      profile?.preferred_currency === c.code
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-card"
+                    }`}
+                  >
+                    <span className="text-sm font-bold">{c.symbol}</span>
+                    {c.code}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      {/* Budget Section */}
+      <section className="rounded-2xl bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+          <Target className="h-4 w-4" />
+          Budget
+        </div>
+
+        {/* Personal limit */}
+        <div className="mb-3">
+          <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+            My Daily Limit
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                {currencySymbol}
+              </span>
+              <Input
+                type="number"
+                value={personalLimit}
+                onChange={(e) => setPersonalLimit(Number(e.target.value))}
+                className="h-11 rounded-xl pl-8"
+                min={1}
+              />
+            </div>
+            <Button
+              onClick={handleSavePersonalLimit}
+              disabled={updatePersonalLimit.isPending}
+              size="sm"
+              className="h-11 rounded-xl px-5 font-semibold"
+            >
+              Save
+            </Button>
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">Your personal spending cap per day</p>
+        </div>
+
+        <Separator className="my-3" />
+
+        {/* Group budget (admin only) */}
+        {isAdmin && (
+          <div>
+            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <Crown className="h-3 w-3" /> Group Default Budget
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+                  {currencySymbol}
+                </span>
+                <Input
+                  type="number"
+                  value={groupBudget}
+                  onChange={(e) => setGroupBudget(Number(e.target.value))}
+                  className="h-11 rounded-xl pl-8"
+                  min={1}
+                />
+              </div>
+              <Button
+                onClick={handleSaveGroupBudget}
+                disabled={updateBudget.isPending}
+                size="sm"
+                className="h-11 rounded-xl px-5 font-semibold"
+              >
+                Save
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Default limit for new members joining</p>
+          </div>
+        )}
+      </section>
+
+      {/* Members Section */}
+      <section className="rounded-2xl bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <Users className="h-4 w-4" />
+            Members
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold text-foreground">
+              {members?.length || 0}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {members?.map((m) => (
+            <div
+              key={m.id}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
+                m.user_id === user?.id ? "bg-primary/8" : "bg-secondary/50"
+              }`}
+            >
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-secondary text-sm">
+                  {m.profiles?.avatar_text || "🐷"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {m.profiles?.display_name || "Unknown"}
+                  {m.user_id === user?.id && (
+                    <span className="ml-1 text-[10px] font-normal text-muted-foreground">(you)</span>
+                  )}
+                </p>
+              </div>
+              {m.role === "admin" && (
+                <span className="flex items-center gap-0.5 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                  <Crown className="h-3 w-3" /> Admin
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Invite */}
+        <div className="mt-4">
+          <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+            <Mail className="h-3 w-3" /> Invite by Email
+          </label>
+          <div className="flex gap-2">
+            <Input
+              type="email"
+              placeholder="friend@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-10 rounded-xl text-sm"
+            />
+            <Button
+              onClick={handleInvite}
+              disabled={inviteMember.isPending || !email.trim()}
+              size="sm"
+              className="h-10 rounded-xl px-4 font-semibold"
+            >
+              {inviteMember.isPending ? "..." : "Invite"}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Sign Out */}
+      <button
+        onClick={signOut}
+        className="flex items-center justify-center gap-2 rounded-2xl bg-card p-4 text-sm font-semibold text-danger shadow-sm transition-colors hover:bg-danger/10"
+      >
+        <LogOut className="h-4 w-4" />
+        Sign Out
+      </button>
     </motion.div>
   );
 };

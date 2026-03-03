@@ -10,13 +10,14 @@ import BottomNav, { type Tab } from "@/components/BottomNav";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import GroupSetup from "@/components/GroupSetup";
 import { useMyGroups } from "@/hooks/useGroups";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 
 const Index = () => {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const { data: groups, isLoading: groupsLoading } = useMyGroups();
 
   useEffect(() => {
@@ -37,70 +38,131 @@ const Index = () => {
 
   const hasNoGroups = !groupsLoading && (!groups || groups.length === 0);
   const activeGroup = groups?.find((g) => g.id === activeGroupId);
-  const hasMultipleGroups = (groups?.length ?? 0) > 1;
+  const hasGroups = (groups?.length ?? 0) > 0;
 
   const renderPage = () => {
     if (hasNoGroups) return <Dashboard groupId={null} lobby />;
     switch (activeTab) {
-      case "home": return <Dashboard groupId={activeGroupId} />;
-      case "leaderboard": return <Leaderboard groupId={activeGroupId} />;
-      case "consequences": return <Consequences group={activeGroup} />;
-      case "settings": return activeGroup ? <GroupSettings group={activeGroup} /> : null;
+      case "home":
+        return <Dashboard groupId={activeGroupId} />;
+      case "leaderboard":
+        return <Leaderboard groupId={activeGroupId} />;
+      case "consequences":
+        return <Consequences group={activeGroup} />;
+      case "settings":
+        return activeGroup ? <GroupSettings group={activeGroup} /> : null;
     }
   };
 
   return (
     <div className="mx-auto min-h-screen max-w-md bg-background">
-      <NotificationsPanel />
+      {/* Top Bar */}
+      {hasGroups && (
+        <header className="sticky top-0 z-40 flex items-center justify-between bg-background/90 px-4 pb-2 pt-3 backdrop-blur-md">
+          {/* Group Switcher */}
+          <div className="relative">
+            <button
+              onClick={() => setShowGroupPicker(!showGroupPicker)}
+              className="flex items-center gap-1.5 rounded-xl bg-card px-3 py-2 shadow-sm transition-colors hover:bg-secondary"
+            >
+              <span className="max-w-[140px] truncate text-sm font-bold text-foreground">
+                {activeGroup?.name || "Select Group"}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
+                  showGroupPicker ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-      {/* Group Switcher */}
-      {hasMultipleGroups && activeGroup && (
-        <div className="relative flex justify-center pt-2">
-          <button
-            onClick={() => setShowGroupPicker(!showGroupPicker)}
-            className="flex items-center gap-1 rounded-full bg-secondary px-4 py-1.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
-          >
-            {activeGroup.name}
-            <ChevronDown className={`h-3 w-3 transition-transform ${showGroupPicker ? "rotate-180" : ""}`} />
-          </button>
-
-          <AnimatePresence>
-            {showGroupPicker && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                className="absolute top-10 z-50 w-48 rounded-xl bg-card p-2 shadow-xl"
-              >
-                {groups?.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => {
-                      setActiveGroupId(g.id);
-                      setShowGroupPicker(false);
-                    }}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                      g.id === activeGroupId
-                        ? "bg-primary/15 text-primary"
-                        : "text-foreground hover:bg-secondary"
-                    }`}
+            <AnimatePresence>
+              {showGroupPicker && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowGroupPicker(false)}
+                    className="fixed inset-0 z-40"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                    className="absolute left-0 top-12 z-50 w-52 rounded-2xl bg-card p-2 shadow-xl"
                   >
-                    {g.name}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                    {groups?.map((g) => (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          setActiveGroupId(g.id);
+                          setShowGroupPicker(false);
+                        }}
+                        className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                          g.id === activeGroupId
+                            ? "bg-primary/15 text-primary"
+                            : "text-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        <span className="text-base">⚔️</span>
+                        <span className="truncate">{g.name}</span>
+                      </button>
+                    ))}
+                    <div className="my-1 h-px bg-border" />
+                    <button
+                      onClick={() => {
+                        setShowGroupPicker(false);
+                        setShowCreateGroup(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                    >
+                      <Plus className="h-4 w-4" />
+                      New Group
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* App Title + Notifications */}
+          <div className="flex items-center gap-1">
+            <span className="mr-1 text-sm font-extrabold text-foreground">ThriftWar</span>
+            <NotificationsPanel />
+          </div>
+        </header>
       )}
+
+      {/* Create Group Modal */}
+      <AnimatePresence>
+        {showCreateGroup && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCreateGroup(false)}
+              className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="fixed inset-x-4 top-1/3 z-50 mx-auto max-w-sm rounded-3xl bg-card p-6 shadow-2xl"
+            >
+              <GroupSetup onCreated={() => setShowCreateGroup(false)} />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.15 }}
         >
           {renderPage()}
         </motion.div>
