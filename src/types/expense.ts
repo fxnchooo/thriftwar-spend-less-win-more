@@ -32,6 +32,26 @@ export const CATEGORIES: { value: ExpenseCategory; label: string; emoji: string 
   { value: "useless", label: "Useless", emoji: "🎭" },
 ];
 
+// Broader, more "real-life" categories for the personal/solo tracker
+export const PERSONAL_CATEGORIES: { value: string; label: string; emoji: string }[] = [
+  { value: "food", label: "Food", emoji: "🍔" },
+  { value: "transport", label: "Transport", emoji: "🚗" },
+  { value: "rent", label: "Rent", emoji: "🏠" },
+  { value: "subscriptions", label: "Subscriptions", emoji: "🔁" },
+  { value: "shopping", label: "Shopping", emoji: "🛍️" },
+  { value: "entertainment", label: "Fun", emoji: "🎬" },
+  { value: "health", label: "Health", emoji: "💊" },
+  { value: "travel", label: "Travel", emoji: "✈️" },
+  { value: "other", label: "Other", emoji: "💼" },
+];
+
+export const PAYMENT_METHODS: { value: "card" | "cash" | "transfer" | "other"; label: string; emoji: string }[] = [
+  { value: "card", label: "Card", emoji: "💳" },
+  { value: "cash", label: "Cash", emoji: "💵" },
+  { value: "transfer", label: "Transfer", emoji: "🏦" },
+  { value: "other", label: "Other", emoji: "📝" },
+];
+
 export const MOCK_LEADERBOARD: LeaderboardUser[] = [
   { id: "1", name: "Alfonso", avatar: "A", totalSpent: 12, isMe: true },
   { id: "2", name: "Sarah", avatar: "S", totalSpent: 45, isMe: false },
