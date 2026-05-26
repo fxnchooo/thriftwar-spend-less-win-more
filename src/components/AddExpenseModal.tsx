@@ -181,6 +181,9 @@ const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency, forceMode 
               </motion.div>
             )}
           </AnimatePresence>
+          </>
+          )}
+
 
           <div className="flex flex-col items-center gap-2">
             <label className="text-sm font-medium text-muted-foreground">How much?</label>
