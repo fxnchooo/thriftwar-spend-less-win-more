@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { Home, Trophy, Zap, User } from "lucide-react";
+import { Home, Wallet, Trophy, Zap, User } from "lucide-react";
 
-type Tab = "home" | "leaderboard" | "consequences" | "settings";
+type Tab = "home" | "personal" | "leaderboard" | "consequences" | "settings";
 
 interface BottomNavProps {
   active: Tab;
@@ -10,6 +10,7 @@ interface BottomNavProps {
 
 const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Home", icon: Home },
+  { id: "personal", label: "Solo", icon: Wallet },
   { id: "leaderboard", label: "Board", icon: Trophy },
   { id: "consequences", label: "Wheel", icon: Zap },
   { id: "settings", label: "Profile", icon: User },
@@ -26,7 +27,7 @@ const BottomNav = ({ active, onTabChange }: BottomNavProps) => {
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="relative flex flex-col items-center gap-0.5 px-5 py-1.5 transition-transform active:scale-90"
+              className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 transition-transform active:scale-90"
             >
               {isActive && (
                 <motion.div
