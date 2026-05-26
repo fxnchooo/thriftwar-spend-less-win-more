@@ -1,32 +1,35 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Mascot from "@/components/Mascot";
-import GroupSetup from "@/components/GroupSetup";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import BudgetRing from "@/components/BudgetRing";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES } from "@/types/expense";
 import { useGroupExpenses } from "@/hooks/useExpenses";
+import { usePersonalExpenses } from "@/hooks/usePersonalExpenses";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useConvertAmount, getCurrencySymbol } from "@/hooks/useCurrency";
 import { useMyMembership } from "@/hooks/useGroups";
 import NotificationsPanel from "@/components/NotificationsPanel";
+import { startOfWeek, startOfMonth, isAfter } from "date-fns";
 
 interface DashboardProps {
   groupId: string | null;
   lobby?: boolean;
+  onCreateGroup?: () => void;
+  onGoSolo?: () => void;
 }
 
-const Dashboard = ({ groupId, lobby }: DashboardProps) => {
+const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo }: DashboardProps) => {
   const [showModal, setShowModal] = useState(false);
-  const [showGroupSetup, setShowGroupSetup] = useState(false);
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { data: expenses } = useGroupExpenses(groupId ?? undefined);
   const { data: membership } = useMyMembership(groupId ?? undefined);
+  const { expenses: personalExpenses } = usePersonalExpenses();
   const convert = useConvertAmount();
   const currencySymbol = getCurrencySymbol(profile?.preferred_currency || "USD");
 
@@ -36,6 +39,19 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
   const dailyTotal = todayExpenses.reduce((sum, e) => sum + convert(Number(e.amount), e.currency), 0);
   const dailyBudget = membership?.personal_limit != null ? Number(membership.personal_limit) : 50;
   const isOverBudget = dailyTotal > dailyBudget;
+
+  const personalStats = useMemo(() => {
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const monthStart = startOfMonth(new Date());
+    let week = 0;
+    let month = 0;
+    personalExpenses.forEach((e) => {
+      const d = new Date(e.date);
+      if (isAfter(d, weekStart) || d.toDateString() === weekStart.toDateString()) week += e.amount;
+      if (isAfter(d, monthStart) || d.toDateString() === monthStart.toDateString()) month += e.amount;
+    });
+    return { week, month, count: personalExpenses.length };
+  }, [personalExpenses]);
 
   const pennyState = isOverBudget ? "sad" : "happy";
   const pennyMessage = isOverBudget
@@ -49,8 +65,7 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
 
   if (lobby) {
     return (
-      <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-16">
-        {/* Lobby Header */}
+      <div className="flex flex-col items-center gap-6 px-4 pb-24 pt-6">
         <header className="flex w-full items-center justify-between">
           <div />
           <div className="text-center">
@@ -64,33 +79,40 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
 
         <Mascot state="happy" message="Welcome aboard! 🎉" />
 
-        <div className="flex w-full max-w-xs flex-col items-center gap-4 text-center">
+        <div className="flex w-full max-w-sm flex-col gap-3">
           <div className="rounded-2xl bg-card p-5 shadow-sm">
-            <p className="text-sm font-medium text-muted-foreground">
-              You aren't in a group yet. Create one to start a war, or wait for an invite!
+            <p className="text-sm font-semibold text-foreground">
+              No group yet? No problem.
             </p>
-          </div>
-          {!showGroupSetup ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Start tracking your own spending right now. You can invite friends later.
+            </p>
             <Button
-              onClick={() => setShowGroupSetup(true)}
-              className="h-12 w-full rounded-2xl text-base font-bold"
+              onClick={onGoSolo}
+              className="mt-3 h-11 w-full rounded-2xl text-sm font-bold"
             >
-              Create Group 🚀
+              <Wallet className="mr-1 h-4 w-4" /> Open Solo Tracker
             </Button>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-full"
+          </div>
+
+          <div className="rounded-2xl bg-card p-5 shadow-sm">
+            <p className="text-sm font-semibold text-foreground">Want to play with friends?</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Create a group to unlock leaderboards, shared budgets, and the punishment wheel.
+            </p>
+            <Button
+              variant="secondary"
+              onClick={onCreateGroup}
+              className="mt-3 h-11 w-full rounded-2xl text-sm font-bold"
             >
-              <GroupSetup />
-            </motion.div>
-          )}
+              <Users className="mr-1 h-4 w-4" /> Create a group
+            </Button>
+          </div>
         </div>
 
         <button
           onClick={signOut}
-          className="mt-4 text-xs font-medium text-muted-foreground hover:text-foreground"
+          className="mt-2 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           Sign out
         </button>
@@ -110,10 +132,31 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
       {/* Budget Ring */}
       <BudgetRing spent={dailyTotal} budget={dailyBudget} currencySymbol={currencySymbol} />
 
-      {/* Recent */}
+      {/* Personal summary peek */}
+      <button
+        onClick={onGoSolo}
+        className="flex w-full max-w-md items-center justify-between rounded-2xl bg-card p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-lg">
+            🧾
+          </span>
+          <div>
+            <p className="text-sm font-bold text-foreground">Solo Tracker</p>
+            <p className="text-[11px] text-muted-foreground">
+              {personalStats.count === 0
+                ? "Track private spending"
+                : `${currencySymbol}${personalStats.week.toFixed(0)} this week · ${personalStats.count} entries`}
+            </p>
+          </div>
+        </div>
+        <span className="text-xs font-semibold text-primary">Open →</span>
+      </button>
+
+      {/* Today's Group Expenses */}
       <div className="w-full max-w-md">
         <h2 className="mb-3 flex items-center justify-between text-sm font-semibold text-muted-foreground">
-          <span>Today's Expenses</span>
+          <span>Today's Group Expenses</span>
           <span className="text-xs font-normal">
             {todayExpenses.length} {todayExpenses.length === 1 ? "entry" : "entries"}
           </span>
@@ -164,19 +207,18 @@ const Dashboard = ({ groupId, lobby }: DashboardProps) => {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setShowModal(true)}
-        className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+        aria-label="Add expense"
       >
         <Plus className="h-7 w-7" />
       </motion.button>
 
-      {groupId && (
-        <AddExpenseModal
-          open={showModal}
-          onOpenChange={setShowModal}
-          groupId={groupId}
-          userCurrency={profile?.preferred_currency || "USD"}
-        />
-      )}
+      <AddExpenseModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        groupId={groupId}
+        userCurrency={profile?.preferred_currency || "USD"}
+      />
     </div>
   );
 };
