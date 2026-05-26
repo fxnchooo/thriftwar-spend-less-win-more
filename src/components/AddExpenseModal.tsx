@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,33 +11,76 @@ import { useAddExpense } from "@/hooks/useExpenses";
 import { useGroupMembers } from "@/hooks/useGroups";
 import { useAuth } from "@/hooks/useAuth";
 import { getCurrencySymbol } from "@/hooks/useCurrency";
+import { usePersonalExpenses } from "@/hooks/usePersonalExpenses";
 import { toast } from "sonner";
 import type { ExpenseCategory } from "@/types/expense";
 
 interface AddExpenseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  groupId: string;
+  groupId: string | null;
   userCurrency: string;
+  /** Lock the modal to a specific mode; otherwise the user can choose. */
+  forceMode?: "personal" | "group";
 }
 
-const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency }: AddExpenseModalProps) => {
+const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency, forceMode }: AddExpenseModalProps) => {
+  const [mode, setMode] = useState<"personal" | "group">(
+    forceMode ?? (groupId ? "group" : "personal")
+  );
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>("food");
   const [guiltLevel, setGuiltLevel] = useState(30);
   const [snitchMode, setSnitchMode] = useState(false);
   const [snitchTarget, setSnitchTarget] = useState<string>("");
   const addExpense = useAddExpense();
+  const { addExpense: addPersonal } = usePersonalExpenses();
   const { user } = useAuth();
-  const { data: members } = useGroupMembers(groupId);
+  const { data: members } = useGroupMembers(mode === "group" ? groupId ?? undefined : undefined);
+
+  useEffect(() => {
+    if (open) {
+      setMode(forceMode ?? (groupId ? "group" : "personal"));
+    }
+  }, [open, forceMode, groupId]);
 
   const otherMembers = members?.filter((m) => m.user_id !== user?.id) ?? [];
 
   const isHighGuilt = guiltLevel > 70;
   const symbol = getCurrencySymbol(userCurrency);
+  const canSwitchMode = !forceMode;
+
+  const reset = () => {
+    setAmount("");
+    setCategory("food");
+    setGuiltLevel(30);
+    setSnitchMode(false);
+    setSnitchTarget("");
+  };
 
   const handleSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) return;
+
+    if (mode === "personal") {
+      addPersonal({
+        amount: parseFloat(amount),
+        currency: userCurrency,
+        description:
+          CATEGORIES.find((c) => c.value === category)?.label || "Expense",
+        category,
+        date: new Date().toISOString().slice(0, 10),
+        payment_method: "card",
+      });
+      toast.success("Personal expense saved 💸");
+      reset();
+      onOpenChange(false);
+      return;
+    }
+
+    if (!groupId) {
+      toast.error("Pick a group first");
+      return;
+    }
     if (snitchMode && !snitchTarget) {
       toast.error("Pick a friend to snitch on!");
       return;
@@ -59,11 +102,7 @@ const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency }: AddExpen
       {
         onSuccess: () => {
           toast.success(snitchMode ? "Snitch logged! Waiting for confirmation. 🕵️" : "Expense added! 💸");
-          setAmount("");
-          setCategory("food");
-          setGuiltLevel(30);
-          setSnitchMode(false);
-          setSnitchTarget("");
+          reset();
           onOpenChange(false);
         },
         onError: (err) => toast.error(err.message),
@@ -80,8 +119,40 @@ const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency }: AddExpen
           <DialogTitle className="text-center text-xl font-bold">Add Expense</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-6">
-          {/* Snitch Mode Toggle */}
+        <div className="flex flex-col gap-5">
+          {/* Mode picker */}
+          {canSwitchMode && (
+            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-secondary p-1">
+              <button
+                type="button"
+                onClick={() => setMode("personal")}
+                className={`rounded-xl py-2 text-sm font-semibold transition-all ${
+                  mode === "personal" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                🧍 Personal
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("group")}
+                disabled={!groupId}
+                className={`rounded-xl py-2 text-sm font-semibold transition-all disabled:opacity-40 ${
+                  mode === "group" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                👥 Group
+              </button>
+            </div>
+          )}
+
+          {mode === "group" && !groupId && (
+            <p className="rounded-xl bg-secondary px-3 py-2 text-center text-xs text-muted-foreground">
+              Join or create a group first to log group expenses.
+            </p>
+          )}
+
+          {/* Snitch Mode Toggle (group only) */}
+          {mode === "group" && groupId && (
           <div className="flex items-center justify-between rounded-2xl bg-secondary p-4">
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-foreground">Log for a friend? (Snitch Mode) 🕵️</span>
