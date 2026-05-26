@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
+import Personal from "@/pages/Personal";
 import Leaderboard from "@/pages/Leaderboard";
 import Consequences from "@/pages/Consequences";
 import GroupSettings from "@/components/GroupSettings";
@@ -10,7 +11,8 @@ import BottomNav, { type Tab } from "@/components/BottomNav";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import GroupSetup from "@/components/GroupSetup";
 import { useMyGroups } from "@/hooks/useGroups";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -36,12 +38,42 @@ const Index = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  const hasNoGroups = !groupsLoading && (!groups || groups.length === 0);
-  const activeGroup = groups?.find((g) => g.id === activeGroupId);
   const hasGroups = (groups?.length ?? 0) > 0;
+  const activeGroup = groups?.find((g) => g.id === activeGroupId);
+
+  // Auto-redirect "group-only" tabs to Personal if user has no group yet
+  const needsGroup = activeTab === "home" || activeTab === "leaderboard" || activeTab === "consequences" || activeTab === "settings";
+  const showNoGroupHint = !groupsLoading && !hasGroups && needsGroup && activeTab !== "home";
 
   const renderPage = () => {
-    if (hasNoGroups) return <Dashboard groupId={null} lobby />;
+    if (activeTab === "personal") return <Personal />;
+
+    if (!hasGroups) {
+      // Home shows lobby; other group-only tabs show a friendly empty state
+      if (activeTab === "home") return <Dashboard groupId={null} lobby onCreateGroup={() => setShowCreateGroup(true)} onGoSolo={() => setActiveTab("personal")} />;
+      return (
+        <div className="flex flex-col items-center gap-4 px-6 pb-28 pt-16 text-center">
+          <span className="text-5xl">👥</span>
+          <h2 className="text-xl font-bold text-foreground">This needs a group</h2>
+          <p className="max-w-xs text-sm text-muted-foreground">
+            Create a group to unlock leaderboards, the punishment wheel, and shared budgets — or keep tracking solo.
+          </p>
+          <div className="flex w-full max-w-xs flex-col gap-2">
+            <Button onClick={() => setShowCreateGroup(true)} className="h-11 rounded-2xl font-bold">
+              <Users className="mr-1 h-4 w-4" /> Create a group
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setActiveTab("personal")}
+              className="h-11 rounded-2xl font-semibold"
+            >
+              Use Solo Tracker
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "home":
         return <Dashboard groupId={activeGroupId} />;
@@ -54,10 +86,12 @@ const Index = () => {
     }
   };
 
+  const showHeader = hasGroups && activeTab !== "personal";
+
   return (
     <div className="mx-auto min-h-screen max-w-md bg-background">
       {/* Top Bar */}
-      {hasGroups && (
+      {showHeader && (
         <header className="sticky top-0 z-40 flex items-center justify-between bg-background/90 px-4 pb-2 pt-3 backdrop-blur-md">
           {/* Group Switcher */}
           <div className="relative">
