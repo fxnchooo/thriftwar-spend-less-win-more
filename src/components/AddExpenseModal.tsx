@@ -153,6 +153,7 @@ const AddExpenseModal = ({ open, onOpenChange, groupId, userCurrency, forceMode 
 
           {/* Snitch Mode Toggle (group only) */}
           {mode === "group" && groupId && (
+          <>
           <div className="flex items-center justify-between rounded-2xl bg-secondary p-4">
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-foreground">Log for a friend? (Snitch Mode) 🕵️</span>
