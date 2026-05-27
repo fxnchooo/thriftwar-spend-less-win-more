@@ -135,7 +135,8 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo }: DashboardProps) 
       {/* Personal summary peek */}
       <button
         onClick={onGoSolo}
-        className="flex w-full max-w-md items-center justify-between rounded-2xl bg-card p-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+        disabled={!onGoSolo}
+        className="flex w-full max-w-md items-center justify-between rounded-2xl bg-card p-4 text-left shadow-sm transition-transform active:scale-[0.98] disabled:cursor-default disabled:active:scale-100"
       >
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-lg">
