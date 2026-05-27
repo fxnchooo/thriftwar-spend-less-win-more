@@ -1,16 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Pencil, Trash2, TrendingUp, Calendar, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, TrendingUp, Calendar, Tag, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import Mascot from "@/components/Mascot";
+import BudgetRing from "@/components/BudgetRing";
 import PersonalExpenseModal from "@/components/PersonalExpenseModal";
 import { usePersonalExpenses, type PersonalExpense } from "@/hooks/usePersonalExpenses";
+import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { getCurrencySymbol } from "@/hooks/useCurrency";
 import { PERSONAL_CATEGORIES } from "@/types/expense";
 import { startOfWeek, startOfMonth, isAfter, format } from "date-fns";
 import { toast } from "sonner";
 
+const budgetKey = (uid: string) => `thriftwar:personal_budget:${uid}`;
+
 const Personal = () => {
+  const { user } = useAuth();
   const { expenses, deleteExpense } = usePersonalExpenses();
   const { data: profile } = useProfile();
   const symbol = getCurrencySymbol(profile?.preferred_currency || "USD");
@@ -18,21 +26,57 @@ const Personal = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PersonalExpense | null>(null);
 
+  const [dailyBudget, setDailyBudget] = useState<number>(50);
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [budgetDraft, setBudgetDraft] = useState("50");
+
+  useEffect(() => {
+    if (!user) return;
+    const raw = localStorage.getItem(budgetKey(user.id));
+    const val = raw ? Number(raw) : 50;
+    setDailyBudget(Number.isFinite(val) && val > 0 ? val : 50);
+    setBudgetDraft(String(Number.isFinite(val) && val > 0 ? val : 50));
+  }, [user]);
+
+  const saveBudget = () => {
+    if (!user) return;
+    const val = Number(budgetDraft);
+    if (!Number.isFinite(val) || val <= 0) {
+      toast.error("Enter a valid budget");
+      return;
+    }
+    localStorage.setItem(budgetKey(user.id), String(val));
+    setDailyBudget(val);
+    setEditingBudget(false);
+    toast.success("Budget updated");
+  };
+
   const stats = useMemo(() => {
+    const today = new Date().toDateString();
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const monthStart = startOfMonth(new Date());
+    let day = 0;
     let week = 0;
     let month = 0;
     const byCategory: Record<string, number> = {};
     expenses.forEach((e) => {
       const d = new Date(e.date);
+      if (d.toDateString() === today) day += e.amount;
       if (isAfter(d, weekStart) || d.toDateString() === weekStart.toDateString()) week += e.amount;
       if (isAfter(d, monthStart) || d.toDateString() === monthStart.toDateString()) month += e.amount;
       byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
     });
     const top = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0];
-    return { week, month, topCategory: top?.[0], topAmount: top?.[1] ?? 0 };
+    return { day, week, month, topCategory: top?.[0], topAmount: top?.[1] ?? 0 };
   }, [expenses]);
+
+  const isOver = stats.day > dailyBudget;
+  const pennyState = isOver ? "sad" : "happy";
+  const pennyMessage = isOver
+    ? "Over budget today 😬"
+    : stats.day === 0
+    ? "Fresh start today! 🎉"
+    : `${symbol}${(dailyBudget - stats.day).toFixed(0)} left today 💪`;
 
   const getCat = (v: string) => PERSONAL_CATEGORIES.find((c) => c.value === v);
 
@@ -50,32 +94,71 @@ const Personal = () => {
   };
 
   return (
-    <div className="flex flex-col gap-5 px-4 pb-28 pt-4">
-      <header>
-        <h1 className="text-2xl font-extrabold text-foreground">Solo Tracker</h1>
-        <p className="text-sm text-muted-foreground">
-          Your private spending — no group needed 🔒
-        </p>
-      </header>
+    <div className="flex flex-col items-center gap-5 px-4 pb-28 pt-4">
+      <Badge className="border-none bg-primary/15 text-primary hover:bg-primary/20 gap-1 px-4 py-1.5 text-sm font-semibold">
+        🔒 Solo · {profile?.display_name || "You"}
+      </Badge>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-3">
+      <Mascot state={pennyState} message={pennyMessage} />
+
+      <BudgetRing spent={stats.day} budget={dailyBudget} currencySymbol={symbol} />
+
+      {/* Daily budget editor */}
+      <div className="flex items-center gap-2 text-xs">
+        {editingBudget ? (
+          <>
+            <span className="text-muted-foreground">Daily budget</span>
+            <Input
+              value={budgetDraft}
+              onChange={(e) => setBudgetDraft(e.target.value)}
+              type="number"
+              inputMode="decimal"
+              className="h-8 w-20 rounded-lg text-center text-sm"
+            />
+            <button
+              onClick={saveBudget}
+              className="rounded-lg bg-primary p-1.5 text-primary-foreground"
+              aria-label="Save budget"
+            >
+              <Check className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setEditingBudget(false);
+                setBudgetDraft(String(dailyBudget));
+              }}
+              className="rounded-lg bg-secondary p-1.5 text-foreground"
+              aria-label="Cancel"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setEditingBudget(true)}
+            className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 font-medium text-muted-foreground shadow-sm hover:text-foreground"
+          >
+            <Pencil className="h-3 w-3" /> Edit daily budget ({symbol}{dailyBudget})
+          </button>
+        )}
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid w-full max-w-md grid-cols-2 gap-3">
         <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             <Calendar className="h-3 w-3" /> This week
           </div>
-          <p className="text-2xl font-extrabold text-foreground">
-            {symbol}
-            {stats.week.toFixed(2)}
+          <p className="text-xl font-extrabold text-foreground">
+            {symbol}{stats.week.toFixed(2)}
           </p>
         </div>
         <div className="rounded-2xl bg-card p-4 shadow-sm">
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             <TrendingUp className="h-3 w-3" /> This month
           </div>
-          <p className="text-2xl font-extrabold text-foreground">
-            {symbol}
-            {stats.month.toFixed(2)}
+          <p className="text-xl font-extrabold text-foreground">
+            {symbol}{stats.month.toFixed(2)}
           </p>
         </div>
         <div className="col-span-2 rounded-2xl bg-card p-4 shadow-sm">
@@ -83,12 +166,11 @@ const Personal = () => {
             <Tag className="h-3 w-3" /> Biggest category
           </div>
           {stats.topCategory ? (
-            <p className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <p className="flex items-center gap-2 text-base font-bold text-foreground">
               <span className="text-2xl">{getCat(stats.topCategory)?.emoji}</span>
               <span>{getCat(stats.topCategory)?.label || stats.topCategory}</span>
-              <span className="ml-auto text-base font-semibold text-muted-foreground">
-                {symbol}
-                {stats.topAmount.toFixed(2)}
+              <span className="ml-auto text-sm font-semibold text-muted-foreground">
+                {symbol}{stats.topAmount.toFixed(2)}
               </span>
             </p>
           ) : (
@@ -98,12 +180,10 @@ const Personal = () => {
       </div>
 
       {/* List */}
-      <div>
+      <div className="w-full max-w-md">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-muted-foreground">Recent expenses</h2>
-          <span className="text-xs text-muted-foreground">
-            {expenses.length} total
-          </span>
+          <span className="text-xs text-muted-foreground">{expenses.length} total</span>
         </div>
 
         <AnimatePresence>
