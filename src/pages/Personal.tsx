@@ -224,7 +224,7 @@ const Personal = () => {
                         {e.description}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        {format(new Date(e.date), "MMM d")} · {cat?.label || e.category}
+                        {format(parseISO(e.date), "MMM d")} · {cat?.label || e.category}
                         {e.payment_method ? ` · ${e.payment_method}` : ""}
                       </p>
                     </div>
