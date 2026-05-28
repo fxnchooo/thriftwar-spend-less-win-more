@@ -60,7 +60,7 @@ const Personal = () => {
     let month = 0;
     const byCategory: Record<string, number> = {};
     expenses.forEach((e) => {
-      const d = new Date(e.date);
+      const d = parseISO(e.date);
       if (d.toDateString() === today) day += e.amount;
       if (isAfter(d, weekStart) || d.toDateString() === weekStart.toDateString()) week += e.amount;
       if (isAfter(d, monthStart) || d.toDateString() === monthStart.toDateString()) month += e.amount;
