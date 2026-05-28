@@ -214,7 +214,7 @@ const Personal = () => {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i * 0.02, 0.2) }}
-                    className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                    className="flex items-center gap-3 rounded-2xl bg-card p-3 pr-3 shadow-sm last:mr-20"
                   >
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-xl">
                       {cat?.emoji || "💰"}
