@@ -51,16 +51,33 @@ const BudgetRing = ({ spent, budget, currencySymbol }: BudgetRingProps) => {
           />
         </svg>
         {/* Center content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <motion.span
-            key={spent}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className={`text-3xl font-black ${isOver ? "text-danger" : "text-foreground"}`}
-          >
-            {currencySymbol}{spent.toFixed(2)}
-          </motion.span>
-          <span className="text-xs font-medium text-muted-foreground">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+          {(() => {
+            const spentLabel = `${currencySymbol}${spent.toFixed(2)}`;
+            const sizeClass =
+              spentLabel.length > 11
+                ? "text-base"
+                : spentLabel.length > 9
+                ? "text-lg"
+                : spentLabel.length > 7
+                ? "text-xl"
+                : spentLabel.length > 5
+                ? "text-2xl"
+                : "text-3xl";
+            return (
+              <motion.span
+                key={spent}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                className={`block w-full truncate font-black tabular-nums leading-tight ${
+                  isOver ? "text-danger" : "text-foreground"
+                } ${sizeClass}`}
+              >
+                {spentLabel}
+              </motion.span>
+            );
+          })()}
+          <span className="mt-0.5 text-[11px] font-medium text-muted-foreground">
             of {currencySymbol}{budget}/day
           </span>
         </div>
