@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { getCurrencySymbol } from "@/hooks/useCurrency";
 import { PERSONAL_CATEGORIES } from "@/types/expense";
-import { startOfWeek, startOfMonth, isAfter, format } from "date-fns";
+import { startOfWeek, startOfMonth, isAfter, format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 const budgetKey = (uid: string) => `thriftwar:personal_budget:${uid}`;
@@ -60,7 +60,7 @@ const Personal = () => {
     let month = 0;
     const byCategory: Record<string, number> = {};
     expenses.forEach((e) => {
-      const d = new Date(e.date);
+      const d = parseISO(e.date);
       if (d.toDateString() === today) day += e.amount;
       if (isAfter(d, weekStart) || d.toDateString() === weekStart.toDateString()) week += e.amount;
       if (isAfter(d, monthStart) || d.toDateString() === monthStart.toDateString()) month += e.amount;
@@ -214,7 +214,7 @@ const Personal = () => {
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i * 0.02, 0.2) }}
-                    className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm"
+                    className="flex items-center gap-3 rounded-2xl bg-card p-3 pr-3 shadow-sm last:mr-20"
                   >
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-xl">
                       {cat?.emoji || "💰"}
@@ -224,7 +224,7 @@ const Personal = () => {
                         {e.description}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        {format(new Date(e.date), "MMM d")} · {cat?.label || e.category}
+                        {format(parseISO(e.date), "MMM d")} · {cat?.label || e.category}
                         {e.payment_method ? ` · ${e.payment_method}` : ""}
                       </p>
                     </div>
