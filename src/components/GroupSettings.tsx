@@ -63,6 +63,10 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
     if (membership?.personal_limit != null) setPersonalLimit(Number(membership.personal_limit));
   }, [membership]);
 
+  useEffect(() => {
+    if (group?.daily_limit != null) setGroupBudget(Number(group.daily_limit));
+  }, [group?.daily_limit]);
+
   const handleSaveName = () => {
     if (!displayName.trim()) return;
     updateProfile.mutate(
