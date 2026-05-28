@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { getCurrencySymbol } from "@/hooks/useCurrency";
 import { PERSONAL_CATEGORIES } from "@/types/expense";
-import { startOfWeek, startOfMonth, isAfter, format } from "date-fns";
+import { startOfWeek, startOfMonth, isAfter, format, parseISO } from "date-fns";
 import { toast } from "sonner";
 
 const budgetKey = (uid: string) => `thriftwar:personal_budget:${uid}`;
