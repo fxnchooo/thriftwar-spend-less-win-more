@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { startOfWeek, endOfWeek, isAfter, isBefore, format } from "date-fns";
+import { startOfWeek, endOfWeek, isAfter, format } from "date-fns";
 import { PUNISHMENTS } from "@/types/expense";
 import Mascot from "@/components/Mascot";
 import { Button } from "@/components/ui/button";
