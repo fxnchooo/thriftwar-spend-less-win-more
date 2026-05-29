@@ -72,26 +72,6 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
     setShowCurrencyPicker(false);
   };
 
-  const handleSavePersonalLimit = () => {
-    if (!membership) return;
-    updatePersonalLimit.mutate(
-      { membershipId: membership.id, personalLimit },
-      {
-        onSuccess: () => toast.success("Personal limit saved! 🎯"),
-        onError: (err) => toast.error(err.message),
-      }
-    );
-  };
-
-  const handleSaveGroupBudget = () => {
-    updateBudget.mutate(
-      { groupId: group.id, dailyLimit: groupBudget },
-      {
-        onSuccess: () => toast.success("Group budget updated! 💰"),
-        onError: (err) => toast.error(err.message),
-      }
-    );
-  };
 
   const handleInvite = () => {
     if (!email.trim()) return;
