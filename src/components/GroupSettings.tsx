@@ -3,12 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
-  useUpdateGroupBudget,
   useInviteMember,
   useMyMembership,
-  useUpdatePersonalLimit,
   useGroupMembers,
 } from "@/hooks/useGroups";
 import type { Group } from "@/hooks/useGroups";
@@ -20,10 +17,7 @@ import {
   Users,
   Crown,
   Mail,
-  Target,
-  Wallet,
   UserCircle,
-  Palette,
   DollarSign,
   LogOut,
   ChevronRight,
