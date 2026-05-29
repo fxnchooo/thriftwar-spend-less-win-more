@@ -3,12 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
-  useUpdateGroupBudget,
   useInviteMember,
-  useMyMembership,
-  useUpdatePersonalLimit,
   useGroupMembers,
 } from "@/hooks/useGroups";
 import type { Group } from "@/hooks/useGroups";
@@ -20,10 +16,7 @@ import {
   Users,
   Crown,
   Mail,
-  Target,
-  Wallet,
   UserCircle,
-  Palette,
   DollarSign,
   LogOut,
   ChevronRight,
@@ -40,32 +33,19 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const { data: members } = useGroupMembers(group.id);
-  const { data: membership } = useMyMembership(group.id);
-  const updateBudget = useUpdateGroupBudget();
+  
   const inviteMember = useInviteMember();
-  const updatePersonalLimit = useUpdatePersonalLimit();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [personalLimit, setPersonalLimit] = useState<number>(50);
-  const [groupBudget, setGroupBudget] = useState<number>(group.daily_limit ?? 50);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
-  const isAdmin = membership?.role === "admin";
   const currencySymbol = getCurrencySymbol(profile?.preferred_currency || "USD");
 
   useEffect(() => {
     if (profile?.display_name) setDisplayName(profile.display_name);
   }, [profile]);
-
-  useEffect(() => {
-    if (membership?.personal_limit != null) setPersonalLimit(Number(membership.personal_limit));
-  }, [membership]);
-
-  useEffect(() => {
-    if (group?.daily_limit != null) setGroupBudget(Number(group.daily_limit));
-  }, [group?.daily_limit]);
 
   const handleSaveName = () => {
     if (!displayName.trim()) return;
@@ -91,26 +71,6 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
     setShowCurrencyPicker(false);
   };
 
-  const handleSavePersonalLimit = () => {
-    if (!membership) return;
-    updatePersonalLimit.mutate(
-      { membershipId: membership.id, personalLimit },
-      {
-        onSuccess: () => toast.success("Personal limit saved! 🎯"),
-        onError: (err) => toast.error(err.message),
-      }
-    );
-  };
-
-  const handleSaveGroupBudget = () => {
-    updateBudget.mutate(
-      { groupId: group.id, dailyLimit: groupBudget },
-      {
-        onSuccess: () => toast.success("Group budget updated! 💰"),
-        onError: (err) => toast.error(err.message),
-      }
-    );
-  };
 
   const handleInvite = () => {
     if (!email.trim()) return;
@@ -230,78 +190,6 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
             </motion.div>
           )}
         </AnimatePresence>
-      </section>
-
-      {/* Budget Section */}
-      <section className="rounded-2xl bg-card p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-          <Target className="h-4 w-4" />
-          Budget
-        </div>
-
-        {/* Personal limit */}
-        <div className="mb-3">
-          <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-            My Daily Limit
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
-                {currencySymbol}
-              </span>
-              <Input
-                type="number"
-                value={personalLimit}
-                onChange={(e) => setPersonalLimit(Number(e.target.value))}
-                className="h-11 rounded-xl pl-8"
-                min={1}
-              />
-            </div>
-            <Button
-              onClick={handleSavePersonalLimit}
-              disabled={updatePersonalLimit.isPending}
-              size="sm"
-              className="h-11 rounded-xl px-5 font-semibold"
-            >
-              Save
-            </Button>
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Your personal spending cap per day</p>
-        </div>
-
-        <Separator className="my-3" />
-
-        {/* Group budget (admin only) */}
-        {isAdmin && (
-          <div>
-            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-              <Crown className="h-3 w-3" /> Group Default Budget
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
-                  {currencySymbol}
-                </span>
-                <Input
-                  type="number"
-                  value={groupBudget}
-                  onChange={(e) => setGroupBudget(Number(e.target.value))}
-                  className="h-11 rounded-xl pl-8"
-                  min={1}
-                />
-              </div>
-              <Button
-                onClick={handleSaveGroupBudget}
-                disabled={updateBudget.isPending}
-                size="sm"
-                className="h-11 rounded-xl px-5 font-semibold"
-              >
-                Save
-              </Button>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Default limit for new members joining</p>
-          </div>
-        )}
       </section>
 
       {/* Members Section */}
