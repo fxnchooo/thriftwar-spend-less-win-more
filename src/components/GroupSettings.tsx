@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   useInviteMember,
-  useMyMembership,
   useGroupMembers,
 } from "@/hooks/useGroups";
 import type { Group } from "@/hooks/useGroups";
