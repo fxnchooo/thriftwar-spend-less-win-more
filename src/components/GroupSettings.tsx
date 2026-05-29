@@ -34,7 +34,7 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const { data: members } = useGroupMembers(group.id);
-  const { data: membership } = useMyMembership(group.id);
+  
   const inviteMember = useInviteMember();
 
   const [email, setEmail] = useState("");
