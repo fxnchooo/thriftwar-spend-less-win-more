@@ -35,31 +35,18 @@ const GroupSettings = ({ group }: GroupSettingsProps) => {
   const updateProfile = useUpdateProfile();
   const { data: members } = useGroupMembers(group.id);
   const { data: membership } = useMyMembership(group.id);
-  const updateBudget = useUpdateGroupBudget();
   const inviteMember = useInviteMember();
-  const updatePersonalLimit = useUpdatePersonalLimit();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [personalLimit, setPersonalLimit] = useState<number>(50);
-  const [groupBudget, setGroupBudget] = useState<number>(group.daily_limit ?? 50);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
-  const isAdmin = membership?.role === "admin";
   const currencySymbol = getCurrencySymbol(profile?.preferred_currency || "USD");
 
   useEffect(() => {
     if (profile?.display_name) setDisplayName(profile.display_name);
   }, [profile]);
-
-  useEffect(() => {
-    if (membership?.personal_limit != null) setPersonalLimit(Number(membership.personal_limit));
-  }, [membership]);
-
-  useEffect(() => {
-    if (group?.daily_limit != null) setGroupBudget(Number(group.daily_limit));
-  }, [group?.daily_limit]);
 
   const handleSaveName = () => {
     if (!displayName.trim()) return;
