@@ -59,10 +59,20 @@ export const MOCK_LEADERBOARD: LeaderboardUser[] = [
 ];
 
 export const PUNISHMENTS: Punishment[] = [
-  { id: "1", text: "Buy coffee for the winner", emoji: "☕" },
-  { id: "2", text: "Post an embarrassing photo", emoji: "📸" },
-  { id: "3", text: "Cook dinner for the group", emoji: "🍳" },
+  { id: "1", text: "Buy coffee for the winner all week", emoji: "☕" },
+  { id: "2", text: "Post an embarrassing selfie to the group chat", emoji: "📸" },
+  { id: "3", text: "Cook dinner for the winner", emoji: "🍳" },
   { id: "4", text: "Do 50 push-ups on video", emoji: "💪" },
-  { id: "5", text: "Wear a silly hat all day", emoji: "🎩" },
+  { id: "5", text: "Wear a silly hat for a full day", emoji: "🎩" },
   { id: "6", text: "Sing karaoke in public", emoji: "🎤" },
+  { id: "7", text: "Change your profile pic to whatever the winner picks", emoji: "🖼️" },
+  { id: "8", text: "Send a voice note rapping your apology", emoji: "🎙️" },
+  { id: "9", text: "No takeout for the next 7 days", emoji: "🥡" },
+  { id: "10", text: "Pay the next group tab", emoji: "💸" },
+  { id: "11", text: "Write a haiku about your overspending", emoji: "✍️" },
+  { id: "12", text: "Cold shower, 60 seconds, on video", emoji: "🥶" },
+  { id: "13", text: "Walk instead of Uber for a whole day", emoji: "🚶" },
+  { id: "14", text: "Eat the group's choice of weird food", emoji: "🌶️" },
+  { id: "15", text: "Wear sunglasses indoors for 24h", emoji: "🕶️" },
+  { id: "16", text: "Tell a stranger your weekly total", emoji: "🫣" },
 ];
