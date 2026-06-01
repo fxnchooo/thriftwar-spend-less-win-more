@@ -76,7 +76,7 @@ const Index = () => {
 
     switch (activeTab) {
       case "home":
-        return <Dashboard groupId={activeGroupId} onGoSolo={() => setActiveTab("personal")} />;
+        return <Dashboard groupId={activeGroupId} onGoSolo={() => setActiveTab("personal")} onOpenWheel={() => setActiveTab("consequences")} />;
       case "leaderboard":
         return <Leaderboard groupId={activeGroupId} />;
       case "consequences":

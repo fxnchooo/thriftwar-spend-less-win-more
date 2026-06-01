@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Mascot from "@/components/Mascot";
 import AddExpenseModal from "@/components/AddExpenseModal";
-import { Badge } from "@/components/ui/badge";
+
 import { CATEGORIES } from "@/types/expense";
 import { useGroupExpenses } from "@/hooks/useExpenses";
 import { usePersonalExpenses } from "@/hooks/usePersonalExpenses";
@@ -15,15 +15,19 @@ import { useConvertAmount, getCurrencySymbol } from "@/hooks/useCurrency";
 import { useGroupMembers } from "@/hooks/useGroups";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { startOfWeek, startOfMonth, isAfter } from "date-fns";
+import StreakChip from "@/components/StreakChip";
+import NoSpendButton from "@/components/NoSpendButton";
+import WeekWrappedCard from "@/components/WeekWrappedCard";
 
 interface DashboardProps {
   groupId: string | null;
   lobby?: boolean;
   onCreateGroup?: () => void;
   onGoSolo?: () => void;
+  onOpenWheel?: () => void;
 }
 
-const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo }: DashboardProps) => {
+const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: DashboardProps) => {
   const [showModal, setShowModal] = useState(false);
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
@@ -158,12 +162,13 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo }: DashboardProps) 
 
   return (
     <div className="flex flex-col items-center gap-5 px-4 pb-24 pt-4">
-      {/* Greeting */}
-      <Badge className="border-none bg-primary/15 text-primary hover:bg-primary/20 gap-1 px-4 py-1.5 text-sm font-semibold">
-        🔥 {profile?.display_name || "Player"}
-      </Badge>
+      {/* Greeting + streak */}
+      <StreakChip name={profile?.display_name} />
 
       <Mascot state={pennyState} message={pennyMessage} />
+
+      {/* End-of-week ritual */}
+      <WeekWrappedCard groupId={groupId} onOpenWheel={onOpenWheel} />
 
       {/* Weekly competition card (replaces BudgetRing) */}
       <div className="w-full max-w-md rounded-3xl bg-card p-5 shadow-sm">
@@ -213,6 +218,9 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo }: DashboardProps) 
           </div>
         )}
       </div>
+
+      {/* Daily ritual: lock in a no-spend day */}
+      <NoSpendButton className="w-full max-w-md" />
 
       {/* Personal summary peek */}
       <button
