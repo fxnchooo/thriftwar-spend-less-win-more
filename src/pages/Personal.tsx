@@ -14,6 +14,8 @@ import { getCurrencySymbol } from "@/hooks/useCurrency";
 import { PERSONAL_CATEGORIES } from "@/types/expense";
 import { startOfWeek, startOfMonth, isAfter, format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import StreakChip from "@/components/StreakChip";
+import NoSpendButton from "@/components/NoSpendButton";
 
 const budgetKey = (uid: string) => `thriftwar:personal_budget:${uid}`;
 
@@ -95,13 +97,13 @@ const Personal = () => {
 
   return (
     <div className="flex flex-col items-center gap-5 px-4 pb-28 pt-4">
-      <Badge className="border-none bg-primary/15 text-primary hover:bg-primary/20 gap-1 px-4 py-1.5 text-sm font-semibold">
-        🔒 Solo · {profile?.display_name || "You"}
-      </Badge>
+      <StreakChip name={profile?.display_name} />
 
       <Mascot state={pennyState} message={pennyMessage} />
 
       <BudgetRing spent={stats.day} budget={dailyBudget} currencySymbol={symbol} />
+
+      <NoSpendButton variant="ghost" />
 
       {/* Daily budget editor */}
       <div className="flex items-center gap-2 text-xs">
