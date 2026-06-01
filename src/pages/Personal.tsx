@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Pencil, Trash2, TrendingUp, Calendar, Tag, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+
 import Mascot from "@/components/Mascot";
 import BudgetRing from "@/components/BudgetRing";
 import PersonalExpenseModal from "@/components/PersonalExpenseModal";
