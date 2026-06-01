@@ -219,6 +219,9 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
         )}
       </div>
 
+      {/* Daily ritual: lock in a no-spend day */}
+      <NoSpendButton className="w-full max-w-md" />
+
       {/* Personal summary peek */}
       <button
         onClick={onGoSolo}
