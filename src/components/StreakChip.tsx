@@ -25,12 +25,12 @@ const StreakChip = ({ name }: StreakChipProps) => {
       className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold ${
         hasToday
           ? "bg-primary/15 text-primary"
-          : "bg-warning/15 text-warning-foreground ring-1 ring-warning/30"
+          : "bg-card text-foreground ring-1 ring-primary/30"
       }`}
     >
       <Flame className="h-3.5 w-3.5" />
       {current}-day streak
-      {!hasToday && <span className="text-[10px] font-medium opacity-80">· log today!</span>}
+      {!hasToday && <span className="text-[10px] font-medium opacity-70">· log today</span>}
     </motion.span>
   );
 };

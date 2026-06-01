@@ -15,15 +15,19 @@ import { useConvertAmount, getCurrencySymbol } from "@/hooks/useCurrency";
 import { useGroupMembers } from "@/hooks/useGroups";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { startOfWeek, startOfMonth, isAfter } from "date-fns";
+import StreakChip from "@/components/StreakChip";
+import NoSpendButton from "@/components/NoSpendButton";
+import WeekWrappedCard from "@/components/WeekWrappedCard";
 
 interface DashboardProps {
   groupId: string | null;
   lobby?: boolean;
   onCreateGroup?: () => void;
   onGoSolo?: () => void;
+  onOpenWheel?: () => void;
 }
 
-const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo }: DashboardProps) => {
+const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: DashboardProps) => {
   const [showModal, setShowModal] = useState(false);
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
