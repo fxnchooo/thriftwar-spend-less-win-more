@@ -162,12 +162,13 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
 
   return (
     <div className="flex flex-col items-center gap-5 px-4 pb-24 pt-4">
-      {/* Greeting */}
-      <Badge className="border-none bg-primary/15 text-primary hover:bg-primary/20 gap-1 px-4 py-1.5 text-sm font-semibold">
-        🔥 {profile?.display_name || "Player"}
-      </Badge>
+      {/* Greeting + streak */}
+      <StreakChip name={profile?.display_name} />
 
       <Mascot state={pennyState} message={pennyMessage} />
+
+      {/* End-of-week ritual */}
+      <WeekWrappedCard groupId={groupId} onOpenWheel={onOpenWheel} />
 
       {/* Weekly competition card (replaces BudgetRing) */}
       <div className="w-full max-w-md rounded-3xl bg-card p-5 shadow-sm">
