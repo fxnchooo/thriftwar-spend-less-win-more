@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Mascot from "@/components/Mascot";
 import AddExpenseModal from "@/components/AddExpenseModal";
-import { Badge } from "@/components/ui/badge";
+
 import { CATEGORIES } from "@/types/expense";
 import { useGroupExpenses } from "@/hooks/useExpenses";
 import { usePersonalExpenses } from "@/hooks/usePersonalExpenses";
