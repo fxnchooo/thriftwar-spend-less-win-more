@@ -18,6 +18,7 @@ import { startOfWeek, startOfMonth, isAfter } from "date-fns";
 import StreakChip from "@/components/StreakChip";
 import NoSpendButton from "@/components/NoSpendButton";
 import WeekWrappedCard from "@/components/WeekWrappedCard";
+import QuickAddBar from "@/components/QuickAddBar";
 
 interface DashboardProps {
   groupId: string | null;
@@ -218,6 +219,9 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
           </div>
         )}
       </div>
+
+      {/* Quick add — one-tap expense logging */}
+      {groupId && <QuickAddBar mode="group" groupId={groupId} />}
 
       {/* Daily ritual: lock in a no-spend day */}
       <NoSpendButton className="w-full max-w-md" />

@@ -16,6 +16,7 @@ import { startOfWeek, startOfMonth, isAfter, format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import StreakChip from "@/components/StreakChip";
 import NoSpendButton from "@/components/NoSpendButton";
+import QuickAddBar from "@/components/QuickAddBar";
 
 const budgetKey = (uid: string) => `thriftwar:personal_budget:${uid}`;
 
@@ -104,6 +105,9 @@ const Personal = () => {
       <BudgetRing spent={stats.day} budget={dailyBudget} currencySymbol={symbol} />
 
       <NoSpendButton variant="ghost" />
+
+      {/* Quick add — one-tap expense logging */}
+      <QuickAddBar mode="personal" />
 
       {/* Daily budget editor */}
       <div className="flex items-center gap-2 text-xs">
