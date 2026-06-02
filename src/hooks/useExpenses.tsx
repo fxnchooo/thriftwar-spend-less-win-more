@@ -21,9 +21,9 @@ export const useGroupExpenses = (groupId: string | undefined) => {
   // Realtime subscription
   useEffect(() => {
     if (!groupId) return;
-    const channel = supabase
-      .channel(`expenses-${groupId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `group_id=eq.${groupId}` }, () => {
+    const channel = supabase.channel(`expenses-${groupId}-${Math.random().toString(36).slice(2)}`);
+    channel
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "expenses", filter: `group_id=eq.${groupId}` }, () => {
         qc.invalidateQueries({ queryKey: ["expenses", groupId] });
       })
       .subscribe();
