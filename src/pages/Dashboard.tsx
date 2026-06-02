@@ -19,6 +19,7 @@ import StreakChip from "@/components/StreakChip";
 import NoSpendButton from "@/components/NoSpendButton";
 import WeekWrappedCard from "@/components/WeekWrappedCard";
 import QuickAddBar from "@/components/QuickAddBar";
+import ExpenseReactions from "@/components/ExpenseReactions";
 
 interface DashboardProps {
   groupId: string | null;
@@ -275,35 +276,40 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm"
+                    className="rounded-2xl bg-card p-4 shadow-sm"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-xl">
-                        {getCategoryEmoji(expense.category)}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold capitalize text-card-foreground truncate">
-                          {CATEGORIES.find((c) => c.value === expense.category)?.label || expense.category}
-                        </p>
-                        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Avatar className="h-4 w-4">
-                            <AvatarFallback className="bg-secondary text-[10px]">
-                              {who?.avatar || "🐷"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">
-                            {isMine ? "You" : who?.name || "Member"}
-                          </span>
-                          <span>·</span>
-                          <span className="shrink-0">
-                            {new Date(expense.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-xl">
+                          {getCategoryEmoji(expense.category)}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold capitalize text-card-foreground truncate">
+                            {CATEGORIES.find((c) => c.value === expense.category)?.label || expense.category}
+                          </p>
+                          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Avatar className="h-4 w-4">
+                              <AvatarFallback className="bg-secondary text-[10px]">
+                                {who?.avatar || "🐷"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">
+                              {isMine ? "You" : who?.name || "Member"}
+                            </span>
+                            <span>·</span>
+                            <span className="shrink-0">
+                              {new Date(expense.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <span className="shrink-0 pl-2 text-lg font-bold tabular-nums text-danger">
+                        -{currencySymbol}{convert(Number(expense.amount), expense.currency).toFixed(2)}
+                      </span>
                     </div>
-                    <span className="shrink-0 pl-2 text-lg font-bold tabular-nums text-danger">
-                      -{currencySymbol}{convert(Number(expense.amount), expense.currency).toFixed(2)}
-                    </span>
+                    {groupId && (
+                      <ExpenseReactions expenseId={expense.id} groupId={groupId} />
+                    )}
                   </motion.div>
                 );
               })}
