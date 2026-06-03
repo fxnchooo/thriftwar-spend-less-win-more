@@ -163,7 +163,7 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
   const leaderInfo = weekly.leader ? memberById.get(weekly.leader.uid) : undefined;
 
   return (
-    <div className="flex flex-col items-center gap-5 px-4 pb-24 pt-4">
+    <div className="flex flex-col items-center gap-5 px-4 pb-48 pt-4">
       {/* Greeting + streak */}
       <StreakChip name={profile?.display_name} />
 
