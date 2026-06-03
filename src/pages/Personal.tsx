@@ -98,7 +98,7 @@ const Personal = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-5 px-4 pb-48 pt-4">
+    <div className="flex flex-col items-center gap-5 px-4 pb-28 pt-4">
       <StreakChip name={profile?.display_name} />
 
       <Mascot state={pennyState} message={pennyMessage} />
@@ -106,6 +106,10 @@ const Personal = () => {
       <BudgetRing spent={stats.day} budget={dailyBudget} currencySymbol={symbol} />
 
       <NoSpendButton variant="ghost" />
+
+      {/* Quick add — one-tap expense logging */}
+      <QuickAddBar mode="personal" />
+
 
 
       {/* Daily budget editor */}
@@ -261,8 +265,16 @@ const Personal = () => {
         </AnimatePresence>
       </div>
 
-      {/* Floating quick-add dock (replaces FAB) */}
-      <QuickAddBar mode="personal" floating onOpenDetails={openAdd} />
+      {/* FAB */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={openAdd}
+        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+        aria-label="Add personal expense"
+      >
+        <Plus className="h-7 w-7" />
+      </motion.button>
 
       <PersonalExpenseModal open={modalOpen} onOpenChange={setModalOpen} editing={editing} />
     </div>
