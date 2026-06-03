@@ -163,7 +163,7 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
   const leaderInfo = weekly.leader ? memberById.get(weekly.leader.uid) : undefined;
 
   return (
-    <div className="flex flex-col items-center gap-5 px-4 pb-48 pt-4">
+    <div className="flex flex-col items-center gap-5 px-4 pb-24 pt-4">
       {/* Greeting + streak */}
       <StreakChip name={profile?.display_name} />
 
@@ -221,6 +221,8 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
         )}
       </div>
 
+      {/* Quick add — one-tap expense logging */}
+      {groupId && <QuickAddBar mode="group" groupId={groupId} />}
 
       {/* Daily ritual: lock in a no-spend day */}
       <NoSpendButton className="w-full max-w-md" />
@@ -316,15 +318,16 @@ const Dashboard = ({ groupId, lobby, onCreateGroup, onGoSolo, onOpenWheel }: Das
         </AnimatePresence>
       </div>
 
-      {/* Floating quick-add dock (replaces FAB) */}
-      {groupId && (
-        <QuickAddBar
-          mode="group"
-          groupId={groupId}
-          floating
-          onOpenDetails={() => setShowModal(true)}
-        />
-      )}
+      {/* FAB */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setShowModal(true)}
+        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+        aria-label="Add expense"
+      >
+        <Plus className="h-7 w-7" />
+      </motion.button>
 
       <AddExpenseModal
         open={showModal}
