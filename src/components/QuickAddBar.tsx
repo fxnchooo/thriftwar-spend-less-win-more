@@ -67,9 +67,12 @@ const QuickAddBar = ({ mode, groupId, floating = false, onOpenDetails }: QuickAd
         category,
         date: new Date().toISOString().slice(0, 10),
         payment_method: "card",
-      });
-      toast.success("Logged 💸");
-      reset();
+      })
+        ?.then(() => {
+          toast.success("Logged 💸");
+          reset();
+        })
+        .catch((e: any) => toast.error(e.message));
     }
   };
 
