@@ -58,7 +58,7 @@ const PersonalExpenseModal = ({ open, onOpenChange, editing }: Props) => {
 
   const valid = parseFloat(amount) > 0 && description.trim().length > 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!valid) {
       toast.error("Add an amount and a short description");
       return;
@@ -72,14 +72,18 @@ const PersonalExpenseModal = ({ open, onOpenChange, editing }: Props) => {
       notes: notes.trim() || undefined,
       payment_method: payment,
     };
-    if (editing) {
-      updateExpense(editing.id, payload);
-      toast.success("Expense updated ✨");
-    } else {
-      addExpense(payload);
-      toast.success("Expense saved 💸");
+    try {
+      if (editing) {
+        await updateExpense(editing.id, payload);
+        toast.success("Expense updated ✨");
+      } else {
+        await addExpense(payload);
+        toast.success("Expense saved 💸");
+      }
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e.message || "Could not save expense");
     }
-    onOpenChange(false);
   };
 
   return (

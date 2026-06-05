@@ -256,6 +256,48 @@ export type Database = {
           },
         ]
       }
+      personal_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          currency: string
+          date: string
+          description: string
+          id: string
+          notes: string | null
+          payment_method: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_text: string

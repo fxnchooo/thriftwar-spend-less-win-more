@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
 export type PaymentMethod = "card" | "cash" | "transfer" | "other";
@@ -9,93 +11,155 @@ export interface PersonalExpense {
   currency: string;
   description: string;
   category: string;
-  date: string; // ISO date string (yyyy-mm-dd)
+  date: string; // yyyy-mm-dd
   notes?: string;
   payment_method?: PaymentMethod;
   created_at: string;
 }
 
-const storageKey = (userId: string) => `thriftwar:personal_expenses:${userId}`;
-const EVENT_NAME = "thriftwar:personal_expenses_changed";
+const LEGACY_KEY = (uid: string) => `thriftwar:personal_expenses:${uid}`;
+const MIGRATED_KEY = (uid: string) => `thriftwar:personal_expenses_migrated:${uid}`;
 
-const read = (userId: string): PersonalExpense[] => {
-  try {
-    const raw = localStorage.getItem(storageKey(userId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const write = (userId: string, list: PersonalExpense[]) => {
-  localStorage.setItem(storageKey(userId), JSON.stringify(list));
-  // Notify other hook instances in the same tab (storage event only fires across tabs)
-  window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { userId } }));
-};
+const rowToExpense = (row: any): PersonalExpense => ({
+  id: row.id,
+  amount: Number(row.amount),
+  currency: row.currency,
+  description: row.description ?? "",
+  category: row.category,
+  date: row.date,
+  notes: row.notes ?? undefined,
+  payment_method: (row.payment_method ?? "card") as PaymentMethod,
+  created_at: row.created_at,
+});
 
 export const usePersonalExpenses = () => {
   const { user } = useAuth();
-  const [expenses, setExpenses] = useState<PersonalExpense[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const qc = useQueryClient();
+  const userId = user?.id;
+  const queryKey = ["personal_expenses", userId];
 
+  // One-time migration of localStorage rows into the DB
   useEffect(() => {
-    if (!user) return;
-    setExpenses(read(user.id));
-    setLoaded(true);
+    if (!userId) return;
+    if (localStorage.getItem(MIGRATED_KEY(userId))) return;
+    const raw = localStorage.getItem(LEGACY_KEY(userId));
+    if (!raw) {
+      localStorage.setItem(MIGRATED_KEY(userId), "1");
+      return;
+    }
+    try {
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list) || list.length === 0) {
+        localStorage.setItem(MIGRATED_KEY(userId), "1");
+        return;
+      }
+      const rows = list.map((e: any) => ({
+        user_id: userId,
+        amount: Number(e.amount) || 0,
+        currency: e.currency || "USD",
+        description: e.description || "",
+        category: e.category || "other",
+        date: e.date || new Date().toISOString().slice(0, 10),
+        notes: e.notes || null,
+        payment_method: e.payment_method || "card",
+      }));
+      supabase.from("personal_expenses").insert(rows).then(({ error }) => {
+        if (!error) {
+          localStorage.removeItem(LEGACY_KEY(userId));
+          localStorage.setItem(MIGRATED_KEY(userId), "1");
+          qc.invalidateQueries({ queryKey });
+        }
+      });
+    } catch {
+      localStorage.setItem(MIGRATED_KEY(userId), "1");
+    }
+  }, [userId, qc]);
 
-    const refresh = () => setExpenses(read(user.id));
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === storageKey(user.id)) refresh();
-    };
-    const onCustom = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (!detail || detail.userId === user.id) refresh();
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(EVENT_NAME, onCustom);
+  // Realtime subscription
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`personal-expenses-${userId}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "personal_expenses", filter: `user_id=eq.${userId}` },
+        () => qc.invalidateQueries({ queryKey })
+      )
+      .subscribe();
     return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(EVENT_NAME, onCustom);
+      supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [userId, qc]);
+
+  const query = useQuery({
+    queryKey,
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("personal_expenses")
+        .select("*")
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map(rowToExpense);
+    },
+  });
 
   const addExpense = useCallback(
-    (data: Omit<PersonalExpense, "id" | "created_at">) => {
-      if (!user) return;
-      const newExpense: PersonalExpense = {
-        ...data,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(),
-      };
-      const next = [newExpense, ...read(user.id)];
-      setExpenses(next);
-      write(user.id, next);
-      return newExpense;
+    async (data: Omit<PersonalExpense, "id" | "created_at">) => {
+      if (!userId) return;
+      const { error } = await supabase.from("personal_expenses").insert({
+        user_id: userId,
+        amount: data.amount,
+        currency: data.currency,
+        description: data.description,
+        category: data.category,
+        date: data.date,
+        notes: data.notes ?? null,
+        payment_method: data.payment_method ?? "card",
+      });
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey });
     },
-    [user]
+    [userId, qc]
   );
 
   const updateExpense = useCallback(
-    (id: string, patch: Partial<PersonalExpense>) => {
-      if (!user) return;
-      const next = read(user.id).map((e) => (e.id === id ? { ...e, ...patch } : e));
-      setExpenses(next);
-      write(user.id, next);
+    async (id: string, patch: Partial<PersonalExpense>) => {
+      if (!userId) return;
+      const { error } = await supabase
+        .from("personal_expenses")
+        .update({
+          ...(patch.amount !== undefined && { amount: patch.amount }),
+          ...(patch.currency !== undefined && { currency: patch.currency }),
+          ...(patch.description !== undefined && { description: patch.description }),
+          ...(patch.category !== undefined && { category: patch.category }),
+          ...(patch.date !== undefined && { date: patch.date }),
+          ...(patch.notes !== undefined && { notes: patch.notes ?? null }),
+          ...(patch.payment_method !== undefined && { payment_method: patch.payment_method }),
+        })
+        .eq("id", id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey });
     },
-    [user]
+    [userId, qc]
   );
 
   const deleteExpense = useCallback(
-    (id: string) => {
-      if (!user) return;
-      const next = read(user.id).filter((e) => e.id !== id);
-      setExpenses(next);
-      write(user.id, next);
+    async (id: string) => {
+      if (!userId) return;
+      const { error } = await supabase.from("personal_expenses").delete().eq("id", id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey });
     },
-    [user]
+    [userId, qc]
   );
 
-  return { expenses, addExpense, updateExpense, deleteExpense, loaded };
+  return {
+    expenses: query.data ?? [],
+    addExpense,
+    updateExpense,
+    deleteExpense,
+    loaded: !query.isLoading,
+  };
 };

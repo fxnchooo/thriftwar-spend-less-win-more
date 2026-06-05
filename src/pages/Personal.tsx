@@ -92,9 +92,13 @@ const Personal = () => {
     setEditing(e);
     setModalOpen(true);
   };
-  const handleDelete = (e: PersonalExpense) => {
-    deleteExpense(e.id);
-    toast.success("Expense removed");
+  const handleDelete = async (e: PersonalExpense) => {
+    try {
+      await deleteExpense(e.id);
+      toast.success("Expense removed");
+    } catch (err: any) {
+      toast.error(err.message || "Could not delete");
+    }
   };
 
   return (
