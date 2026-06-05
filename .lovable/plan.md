@@ -1,67 +1,50 @@
-## UX Enhancements for Long-Term Retention
+# Launch-readiness plan
 
-After auditing the full flow (lobby → dashboard → solo → leaderboard → wheel → settings), here are the highest-leverage UX changes — ordered by retention impact. Nothing here changes the core mechanics; it amplifies the loops that already exist so people come back daily and weekly.
+Three buckets: data durability, auth, and launch polish. Done in order so each step is verifiable.
 
----
+## 1. Move personal expenses to the database (blocker)
 
-### 1. Daily streak loop (the #1 retention driver)
-Right now nothing pulls a user back tomorrow. Add a lightweight **streak** built around the existing "log an expense (or a $0 no-spend day)" action.
+Currently personal expenses live in `localStorage` only — users lose everything across devices, browsers, or incognito sessions.
 
-- Persistent `currentStreak` + `longestStreak` per user (localStorage first, optional sync later).
-- A **"No-spend day"** button on Home and Solo — taps as a $0 entry, counts for the streak, fuels celebration.
-- Streak chip in the Home greeting row (`🔥 7-day streak`) replacing the static name badge.
-- Milestone confetti + Mascot reaction at 3 / 7 / 14 / 30 days.
+- New table `personal_expenses` with: `user_id`, `amount`, `currency`, `description`, `category`, `date`, `notes`, `payment_method`, plus standard timestamps.
+- RLS: users can only read/insert/update/delete their own rows. Grants for `authenticated` + `service_role`. No `anon`.
+- Rewrite `usePersonalExpenses.tsx` to use Supabase + React Query (mirror the `useExpenses` pattern, including realtime invalidation).
+- One-time migration on first load: if local rows exist for the user, upload them to the DB, then clear localStorage.
+- No UI changes — `Personal.tsx`, `QuickAddBar`, and `PersonalExpenseModal` keep their existing API.
 
-### 2. End-of-week ritual moment
-The weekly showdown is the strongest hook but it's silent. Make Sunday/Monday a **ritual**:
+## 2. Add Google sign-in (recommended default)
 
-- A dismissible **"Week wrapped"** card on Home that appears Sun evening → Mon morning showing: your rank, delta vs last week, winner, and a single CTA "Spin the wheel".
-- Auto-route to Wheel tab on first open of the new week if a spin is pending.
-- Snapshot last week's leaderboard into a tiny **history strip** ("Last 4 weeks: 🥇🥈🥇🥉") on the Leaderboard page — visible progress = stickiness.
+- Run the managed social-auth configuration to enable Google (keeps email/password enabled).
+- Add a "Continue with Google" button on `Auth.tsx` above the email form, using the Lovable Cloud OAuth client (`lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`).
+- Handle the `result.error` / `result.redirected` branches and surface errors via toast.
 
-### 3. Frictionless logging (reduce the cost of the core action)
-Logging is the daily atomic action; every saved second compounds.
+## 3. Verify auth redirect for the published domain
 
-- **Quick-add chips** on Dashboard and Solo: tap "☕ $5" or "🍔 $12" to log a recent-favorite in one tap (derived from user's top 3 categories + median amount).
-- Default the AddExpenseModal amount field to focused + numeric keypad (already partially there) and remember last-used category per user.
-- Optional **swipe-to-delete** on expense rows on Solo (cleaner than the dual edit/trash buttons).
+- The signup flow uses `window.location.origin` as `emailRedirectTo`, which is correct, but the published URL must be allowlisted.
+- Action: confirm `https://thrift-champions-club.lovable.app` (and any custom domain) is in the Cloud auth Site URL / Redirect URLs list. If not, add it. No code change.
 
-### 4. Mid-week pulse + nudges (the "come back Wednesday" problem)
-- Mascot copy on Home becomes **context-aware by weekday**: Mon "Fresh week, fresh wallet"; Wed "Halfway check — you're #2"; Fri "One push to lock #1"; Sun "Spin night 🎡".
-- An optional **opt-in browser notification** ("Remind me to log daily at 9pm") gated behind a single toggle in Profile — no permission prompts on launch.
+## 4. Launch polish
 
-### 5. Social pressure amplifiers (group cohesion)
-- **Live position deltas** on Leaderboard: `▲2 since yesterday` next to each player. Movement is the dopamine, not the absolute number.
-- **Reactions** on expense entries in "Today's Group Expenses": tap to drop 🤡 / 😱 / 👏 (lightweight, no comments). Snitch Mode already exists in spirit — this formalizes it.
-- **Group activity feed** mini-section on Home: "Sara logged $40 brunch · 2h ago · 3 🤡 reactions".
+- **SEO in `index.html`**: real `<title>`, meta description, Open Graph + Twitter card tags, canonical URL.
+- **Error boundary**: wrap the routes in `App.tsx` with a friendly fallback so a render error doesn't whiteout the app.
+- **Loading states**: replace the full-screen pulsing pig with lightweight skeletons on Dashboard, Leaderboard, and Personal while initial data loads.
+- **Empty states audit**: quick pass on brand-new account flows (no group, no expenses, no notifications) to make sure copy and CTAs read well.
 
-### 6. Onboarding & empty-state polish
-- The lobby is already good; add a **30-second interactive tour** (3 hotspots: log expense → see rank → spin wheel) the first time `groups.length > 0`.
-- Empty Today's Expenses gets a **"Log your first $0 day"** primary action — converts the empty state into a streak start.
-- Solo Tracker empty state already has a CTA — extend it with one **sample entry preview** so the layout doesn't feel barren.
+## Out of scope (call out, don't build)
 
-### 7. Small UX papercuts
-- `BottomNav` "Profile" tab actually routes to `GroupSettings` — rename to "Group" or split profile vs group settings.
-- `usePersonalExpenses` budget stored in localStorage means budget vanishes across devices; cheap win to move to `profiles` table.
-- Wheel: the result card should include a **"Mark as paid 🍻"** button that posts a tiny celebration to the group feed → closes the loop.
-- Currency symbol formatting is inconsistent (some `.toFixed(0)`, some `.toFixed(2)`); standardize: integers in summaries, 2-decimal in line items.
+- Push notifications, payments, deeper analytics, account deletion UI. Mention as next-step candidates but not part of this launch.
 
----
+## Technical notes
 
-### Recommended phasing
+- Migration follows the standard 4-step pattern (CREATE TABLE → GRANT → ENABLE RLS → CREATE POLICY), with `service_role` grants included.
+- React Query keys: `["personal_expenses", userId]` to keep cache scoped.
+- Realtime channel filtered by `user_id=eq.${user.id}` so each session only listens to its own rows.
+- Google OAuth uses the managed Lovable Cloud client — no external credentials needed unless the user later wants their own branding.
 
-| Phase | Scope | Why first |
-|---|---|---|
-| **A — Retention core** | Streaks + No-spend day + Week-wrapped card | Direct daily/weekly hooks; small surface area |
-| **B — Logging speed** | Quick-add chips + remembered defaults + swipe-delete | Halves friction on the most-repeated action |
-| **C — Social** | Reactions, deltas, group activity feed | Compounds once core loops are sticky |
-| **D — Polish** | Onboarding tour, profile/group split, currency formatting | Quality bar lift, lower urgency |
+## Verification before sign-off
 
----
-
-### Out of scope (intentionally)
-- No changes to wheel mechanics, punishment list, or competition rules — those just landed.
-- No backend schema changes beyond optionally persisting streaks + daily budget to `profiles` in Phase A.
-- No new auth, payments, or AI integrations.
-
-If approved, I'd start with **Phase A** as a single focused implementation, then check in before B.
+- Log in fresh, add a personal expense, hard-refresh, confirm it persists.
+- Log in on a second browser, confirm the same expense appears.
+- Sign in with Google end-to-end on the published URL.
+- Open the published site in an incognito tab and confirm the email verification link redirects back successfully.
+- Lighthouse pass on the published URL for basic SEO/perf sanity.
